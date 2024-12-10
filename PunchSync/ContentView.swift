@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import Firebase
+
 
 struct ContentView: View {
     var body: some View {
@@ -13,9 +15,19 @@ struct ContentView: View {
             Image(systemName: "globe")
                 .imageScale(.large)
                 .foregroundStyle(.tint)
-            Text("Hello, world!")
+            Text("Hello, katya och arlinda")
         }
         .padding()
+        .onAppear {
+            fbFunc()
+        }
+    }
+    
+    func fbFunc() {
+        var ref: DatabaseReference!
+
+        ref = Database.database().reference()
+        ref.child("punchSyncDatabase")
     }
 }
 
