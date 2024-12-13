@@ -9,7 +9,17 @@ import SwiftUI
 
 struct UnloggedView: View {
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        
+        VStack {
+            Text("PunchSync")
+                .font(.largeTitle)
+                .padding()
+            Text("Login")
+                .padding()
+            Text("Sign Up as Company")
+                .padding()
+            Text("Sign Up as Employee")
+        }
     }
 }
 
