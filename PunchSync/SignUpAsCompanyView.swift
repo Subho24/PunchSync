@@ -27,38 +27,11 @@ struct SignUpAsCompanyView: View {
                     .font(.title2)
                     .padding(.vertical, 50)
                 
-                TextField("Company Name", text: $companyname)
-                    .frame(height: 38)
-                    .textFieldStyle(PlainTextFieldStyle())
-                    .padding(.horizontal)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(Color.black.opacity(0.8), lineWidth: 0.5) // Border with rounded corners
-                    )
-                    .padding([.horizontal], 45)
-                    .padding(.bottom, 10)
+                TextFieldView(placeholder: "Company Name", text: $companyname, isSecure: false)
                 
-                TextField("Organisation Number", text: $organisationnumber)
-                    .frame(height: 38)
-                    .textFieldStyle(PlainTextFieldStyle())
-                    .padding(.horizontal)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(Color.black.opacity(0.8), lineWidth: 0.5) // Border with rounded corners
-                    )
-                    .padding([.horizontal], 45)
-                    .padding(.bottom, 10)
+                TextFieldView(placeholder: "Organisation Number", text: $organisationnumber, isSecure: false)
                 
-                TextField("Adress", text: $adress)
-                    .frame(height: 38)
-                    .textFieldStyle(PlainTextFieldStyle())
-                    .padding(.horizontal)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(Color.black.opacity(0.8), lineWidth: 0.5) // Border with rounded corners
-                    )
-                    .padding([.horizontal], 45)
-                    .padding(.bottom, 3)
+                TextFieldView(placeholder: "Adress", text: $adress, isSecure: false)
                 
                 NavigationLink(destination: AddAdminView()) {
                     VStack {

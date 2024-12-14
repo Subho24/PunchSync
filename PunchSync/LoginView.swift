@@ -25,27 +25,9 @@ struct LoginView: View {
                 .font(.title2)
                 .padding(.vertical, 50)
             
-            TextField("Username or Email", text: $username)
-                .frame(height: 38)
-                .textFieldStyle(PlainTextFieldStyle())
-                .padding(.horizontal)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.black.opacity(0.8), lineWidth: 0.5) // Border with rounded corners
-                )
-                .padding([.horizontal], 45)
-                .padding(.bottom, 10)
+            TextFieldView(placeholder: "Username or Email", text: $username, isSecure: false)
             
-            TextField("Password", text: $password)
-                .frame(height: 38)
-                .textFieldStyle(PlainTextFieldStyle())
-                .padding(.horizontal)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.black.opacity(0.8), lineWidth: 0.5) // Border with rounded corners
-                )
-                .padding([.horizontal], 45)
-                .padding(.bottom, 3)
+            TextFieldView(placeholder: "Password", text: $password, isSecure: true)
             
             VStack {
                 ButtonView(buttontext: "Log in")

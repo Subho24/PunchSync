@@ -34,60 +34,15 @@ struct AddAdminView: View {
                 Spacer()
             }
             
-            TextField("xxxxxxxxxx", text: $yourcompanyID)
-                .frame(height: 38)
-                .textFieldStyle(PlainTextFieldStyle())
-                .padding(.horizontal)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.black.opacity(0.8), lineWidth: 0.5) // Border with rounded corners
-                )
-                .padding([.horizontal], 45)
-                .padding(.bottom, 10)
+            TextFieldView(placeholder: "xxxxxxxxxx", text: $yourcompanyID, isSecure: false)
             
-            TextField("Full Name", text: $fullname)
-                .frame(height: 38)
-                .textFieldStyle(PlainTextFieldStyle())
-                .padding(.horizontal)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.black.opacity(0.8), lineWidth: 0.5) // Border with rounded corners
-                )
-                .padding([.horizontal], 45)
-                .padding(.bottom, 10)
+            TextFieldView(placeholder: "Full Name", text: $fullname, isSecure: false)
+                
+            TextFieldView(placeholder: "Email", text: $email, isSecure: false)
             
-            TextField("Email", text: $email)
-                .frame(height: 38)
-                .textFieldStyle(PlainTextFieldStyle())
-                .padding(.horizontal)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.black.opacity(0.8), lineWidth: 0.5) // Border with rounded corners
-                )
-                .padding([.horizontal], 45)
-                .padding(.bottom, 10)
+            TextFieldView(placeholder: "Password", text: $password, isSecure: true)
             
-            TextField("Password", text: $password)
-                .frame(height: 38)
-                .textFieldStyle(PlainTextFieldStyle())
-                .padding(.horizontal)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.black.opacity(0.8), lineWidth: 0.5) // Border with rounded corners
-                )
-                .padding([.horizontal], 45)
-                .padding(.bottom, 10)
-            
-            TextField("Confirm Password", text: $confirmpassword)
-                .frame(height: 38)
-                .textFieldStyle(PlainTextFieldStyle())
-                .padding(.horizontal)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.black.opacity(0.8), lineWidth: 0.5) // Border with rounded corners
-                )
-                .padding([.horizontal], 45)
-                .padding(.bottom, 3)
+            TextFieldView(placeholder: "Confirm Password", text: $confirmpassword, isSecure: true)
             
             VStack {
                 ButtonView(buttontext: "Sign Up")
