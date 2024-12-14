@@ -17,6 +17,8 @@ struct SignUpAsCompanyView: View {
     @State private var navigateToAddAdmin = false
     @State private var companyCode: String = ""
     
+    @State var errorMessage: String?
+    
     var body: some View {
         
         NavigationStack {
@@ -36,13 +38,21 @@ struct SignUpAsCompanyView: View {
                 TextFieldView(placeholder: "Organization Number", text: $organizationNumber, isSecure: false, systemName: "number")
                 
                 TextFieldView(placeholder: "Address", text: $address, isSecure: false, systemName: "location")
+                
+                Text(errorMessage ?? "")
+                    .frame(height: 20)
                
                 Button(action: {
-                    saveCompanyData()
-                    navigateToAddAdmin = true
-                    companyName = ""
-                    organizationNumber = ""
-                    address = ""
+                    if companyName.isEmpty || organizationNumber.isEmpty || address.isEmpty {
+                        errorMessage = "Please fill in all fields"
+                        navigateToAddAdmin = false
+                    } else {
+                        saveCompanyData()
+                        navigateToAddAdmin = true
+                        companyName = ""
+                        organizationNumber = ""
+                        address = ""
+                    }
                 }) {
                     ButtonView(buttontext: "Next")
                 }
