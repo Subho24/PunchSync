@@ -27,11 +27,11 @@ struct SignUpAsCompanyView: View {
                     .font(.title2)
                     .padding(.vertical, 50)
                 
-                TextFieldView(placeholder: "Company Name", text: $companyname, isSecure: false)
+                TextFieldView(placeholder: "Company Name", text: $companyname, isSecure: false, systemName: "person")
                 
-                TextFieldView(placeholder: "Organisation Number", text: $organisationnumber, isSecure: false)
+                TextFieldView(placeholder: "Organisation Number", text: $organisationnumber, isSecure: false, systemName: "number")
                 
-                TextFieldView(placeholder: "Adress", text: $adress, isSecure: false)
+                TextFieldView(placeholder: "Adress", text: $adress, isSecure: false, systemName: "location")
                 
                 NavigationLink(destination: AddAdminView()) {
                     VStack {

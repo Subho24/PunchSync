@@ -25,9 +25,9 @@ struct LoginView: View {
                 .font(.title2)
                 .padding(.vertical, 50)
             
-            TextFieldView(placeholder: "Username or Email", text: $username, isSecure: false)
+            TextFieldView(placeholder: "Username or Email", text: $username, isSecure: false, systemName: "envelope")
             
-            TextFieldView(placeholder: "Password", text: $password, isSecure: true)
+            TextFieldView(placeholder: "Password", text: $password, isSecure: true, systemName: "lock")
             
             VStack {
                 ButtonView(buttontext: "Log in")
