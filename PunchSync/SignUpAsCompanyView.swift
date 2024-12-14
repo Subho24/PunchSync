@@ -6,12 +6,15 @@
 //
 
 import SwiftUI
+import Firebase
 
 struct SignUpAsCompanyView: View {
     
-    @State var companyname = ""
-    @State var organisationnumber = ""
-    @State var adress = ""
+    @State var companyName = ""
+    @State var organizationNumber = ""
+    @State var address = ""
+    
+    @State private var navigateToAddAdmin = false
     
     var body: some View {
         
@@ -27,21 +30,49 @@ struct SignUpAsCompanyView: View {
                     .font(.title2)
                     .padding(.vertical, 50)
                 
-                TextFieldView(placeholder: "Company Name", text: $companyname, isSecure: false, systemName: "person")
+                TextFieldView(placeholder: "Company Name", text: $companyName, isSecure: false, systemName: "person")
                 
-                TextFieldView(placeholder: "Organisation Number", text: $organisationnumber, isSecure: false, systemName: "number")
+                TextFieldView(placeholder: "Organization Number", text: $organizationNumber, isSecure: false, systemName: "number")
                 
-                TextFieldView(placeholder: "Adress", text: $adress, isSecure: false, systemName: "location")
-                
-                NavigationLink(destination: AddAdminView()) {
-                    VStack {
-                        ButtonView(buttontext: "Next")
-                    }
-                    .padding(.vertical, 38)
+                TextFieldView(placeholder: "Address", text: $address, isSecure: false, systemName: "location")
+               
+                Button(action: {
+                    saveCompanyData()
+                    navigateToAddAdmin = true
+                    companyName = ""
+                    organizationNumber = ""
+                    address = ""
+                }) {
+                    ButtonView(buttontext: "Next")
                 }
-                
+                .navigationDestination(isPresented: $navigateToAddAdmin) {
+                    AddAdminView()
+                }
+                .padding(.vertical, 38)
             }
         }
+    }
+    
+    func saveCompanyData() {
+        var ref: DatabaseReference!
+        
+        ref = Database.database().reference()
+        
+        func generateCompanyCode() -> String {
+            let characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+            return String((0..<10).map { _ in characters.randomElement()! })
+        }
+
+        let companyCode = generateCompanyCode()
+        
+        let companyData: [String: Any] = [
+            "companyName": companyName,
+            "organizationNumber": organizationNumber,
+            "address": address,
+            "companyCode": companyCode,
+        ]
+        
+        ref.child("companies").childByAutoId().setValue(companyData)
     }
 }
 
