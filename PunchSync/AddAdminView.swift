@@ -35,6 +35,8 @@ struct AddAdminView: View {
             }
             
             TextFieldView(placeholder: "xxxxxxxxxx", text: $yourcompanyID, isSecure: false, systemName: "number")
+                .disabled(yourcompanyID != "")
+                .foregroundStyle(Color.gray)
             
             TextFieldView(placeholder: "Full Name", text: $fullname, isSecure: false, systemName: "person")
                 

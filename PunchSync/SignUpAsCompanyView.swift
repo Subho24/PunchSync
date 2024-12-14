@@ -15,6 +15,7 @@ struct SignUpAsCompanyView: View {
     @State var address = ""
     
     @State private var navigateToAddAdmin = false
+    @State private var companyCode: String = ""
     
     var body: some View {
         
@@ -46,7 +47,7 @@ struct SignUpAsCompanyView: View {
                     ButtonView(buttontext: "Next")
                 }
                 .navigationDestination(isPresented: $navigateToAddAdmin) {
-                    AddAdminView()
+                    AddAdminView(yourcompanyID: companyCode)
                 }
                 .padding(.vertical, 38)
             }
@@ -62,14 +63,15 @@ struct SignUpAsCompanyView: View {
             let characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
             return String((0..<10).map { _ in characters.randomElement()! })
         }
-
-        let companyCode = generateCompanyCode()
+        
+        let newCompanyCode = generateCompanyCode()
+        self.companyCode = newCompanyCode
         
         let companyData: [String: Any] = [
             "companyName": companyName,
             "organizationNumber": organizationNumber,
             "address": address,
-            "companyCode": companyCode,
+            "companyCode": newCompanyCode,
         ]
         
         ref.child("companies").childByAutoId().setValue(companyData)
