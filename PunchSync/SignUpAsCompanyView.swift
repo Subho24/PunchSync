@@ -12,7 +12,6 @@ struct SignUpAsCompanyView: View {
     
     @State var companyName = ""
     @State var organizationNumber = ""
-    @State var address = ""
     
     @State private var navigateToAddAdmin = false
     @State private var companyCode: String = ""
@@ -37,13 +36,11 @@ struct SignUpAsCompanyView: View {
                 
                 TextFieldView(placeholder: "Organization Number", text: $organizationNumber, isSecure: false, systemName: "number")
                 
-                TextFieldView(placeholder: "Address", text: $address, isSecure: false, systemName: "location")
-                
                 Text(errorMessage ?? "")
                     .frame(height: 20)
                
                 Button(action: {
-                    if companyName.isEmpty || organizationNumber.isEmpty || address.isEmpty {
+                    if companyName.isEmpty || organizationNumber.isEmpty {
                         errorMessage = "Please fill in all fields"
                         navigateToAddAdmin = false
                     } else {
@@ -51,7 +48,6 @@ struct SignUpAsCompanyView: View {
                         navigateToAddAdmin = true
                         companyName = ""
                         organizationNumber = ""
-                        address = ""
                     }
                 }) {
                     ButtonView(buttontext: "Next")
@@ -80,7 +76,6 @@ struct SignUpAsCompanyView: View {
         let companyData: [String: Any] = [
             "companyName": companyName,
             "organizationNumber": organizationNumber,
-            "address": address,
         ]
         
         ref.child("companies").child(newCompanyCode).setValue(companyData)
