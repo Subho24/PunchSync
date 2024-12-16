@@ -59,7 +59,7 @@ struct SignUpAsCompanyView: View {
                 .navigationDestination(isPresented: $navigateToAddAdmin) {
                     AddAdminView(yourcompanyID: companyCode)
                 }
-                .padding(.vertical, 38)
+                .padding(.vertical, 18)
             }
         }
     }
@@ -81,10 +81,9 @@ struct SignUpAsCompanyView: View {
             "companyName": companyName,
             "organizationNumber": organizationNumber,
             "address": address,
-            "companyCode": newCompanyCode,
         ]
         
-        ref.child("companies").childByAutoId().setValue(companyData)
+        ref.child("companies").child(newCompanyCode).setValue(companyData)
     }
 }
 
