@@ -54,6 +54,8 @@ struct AddAdminView: View {
             
             TextFieldView(placeholder: "Confirm Password", text: $confirmpassword, isSecure: true, systemName: "lock")
             
+            Text(errorMessage)
+            
             VStack {
                 Button(action: {
                     punchsyncfb.userRegister(email: email, password: password) { firebaseError in
