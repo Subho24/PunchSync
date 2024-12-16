@@ -11,6 +11,19 @@ import FirebaseAuth
 
 @Observable class PunchSyncFB {
     
+    func userLogin(email : String, password : String, completion: @escaping (String?) -> Void) {
+        Task {
+            do {
+                try await Auth.auth().signIn(withEmail: email, password: password)
+                print("Successfully logged in")
+                completion(nil)
+            } catch {
+                print("Login failed: \(error.localizedDescription)")
+                completion(error.localizedDescription) // Return Firebase error
+            }
+        }
+    }
+    
     func userRegister(email: String, password: String, completion: @escaping (String?) -> Void) {
         Task {
             do {

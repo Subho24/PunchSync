@@ -9,8 +9,11 @@ import SwiftUI
 
 struct LoginView: View {
     
-    @State var username = ""
+    @State var punchsyncfb = PunchSyncFB()
+    
+    @State var email = ""
     @State var password = ""
+    @State var errorMessage = ""
     
     var body: some View {
         
@@ -25,12 +28,20 @@ struct LoginView: View {
                 .font(.title2)
                 .padding(.vertical, 50)
             
-            TextFieldView(placeholder: "Username or Email", text: $username, isSecure: false, systemName: "envelope")
+            TextFieldView(placeholder: "Email", text: $email, isSecure: false, systemName: "envelope")
             
             TextFieldView(placeholder: "Password", text: $password, isSecure: true, systemName: "lock")
             
+            Text(errorMessage)
+            
             VStack {
-                ButtonView(buttontext: "Log in")
+                Button(action: {
+                    punchsyncfb.userLogin(email: email, password: password) { firebaseError in
+                        errorMessage = firebaseError ?? "" // Default to empty string if no Firebase error
+                    }
+                }) {
+                    ButtonView(buttontext: "Log in")
+                }
             }
             .padding(.vertical, 38)
             
