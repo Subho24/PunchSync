@@ -36,4 +36,12 @@ import FirebaseAuth
             }
         }
     }
+    
+    func userLogout() {
+        do {
+            try Auth.auth().signOut()
+        } catch {
+            
+        }
+    }
 }

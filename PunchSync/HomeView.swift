@@ -9,50 +9,60 @@ import SwiftUI
 
 struct HomeView: View {
     
+    @State var punchsyncfb = PunchSyncFB()
+    
     init() {
-          // This ensures that the TabBar has the correct background color
-          let appearance = UITabBarAppearance()
-          appearance.configureWithOpaqueBackground()
-          appearance.backgroundColor = UIColor(hex: "#E0E2C1")
-          UITabBar.appearance().standardAppearance = appearance
-          UITabBar.appearance().scrollEdgeAppearance = appearance
-        }
+        // This ensures that the TabBar has the correct background color
+        let appearance = UITabBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor(hex: "#E0E2C1")
+        UITabBar.appearance().standardAppearance = appearance
+        UITabBar.appearance().scrollEdgeAppearance = appearance
+    }
+    
       var body: some View {
-        TabView {
-            // Dashboard Tab
-            VStack {
-                DashboardTabView()
-            }
-            .tabItem {
-              VStack {
-                Image(systemName: "tray.2.fill")
-                Text("Dashboard")
-              }
-            }
-            // Check In / Out Tab
-            VStack {
-              CheckTabView()
-            }
-            .tabItem {
-              VStack {
-                Image(systemName: "clock")
-                Text("Check In / Out")
-              }
-            }
-            // More Tab
-            VStack {
-              MoreTabView()
-            }
-            .tabItem {
-              VStack {
-                Image(systemName: "list.dash")
-                Text("More")
-              }
-            }
+          
+          Button(action: {
+              punchsyncfb.userLogout()
+          }) {
+              Text("Sign out")
           }
-        .accentColor(Color.black) // Active Tab
+          TabView {
+              // Dashboard Tab
+              VStack {
+                  DashboardTabView()
+              }
+              .tabItem {
+                VStack {
+                  Image(systemName: "tray.2.fill")
+                  Text("Dashboard")
+                }
+              }
+              // Check In / Out Tab
+              VStack {
+                CheckTabView()
+              }
+              .tabItem {
+                VStack {
+                  Image(systemName: "clock")
+                  Text("Check In / Out")
+                }
+              }
+              // More Tab
+              VStack {
+              MoreTabView()
+              }
+              .tabItem {
+                VStack {
+                  Image(systemName: "list.dash")
+                  Text("More")
+                }
+              }
+            }
+           .accentColor(Color.black) // Active Tab
+          }
         }
-      }
+
     extension UIColor {
       // Function to convert HEX color to UIColor
       convenience init(hex: String) {
