@@ -6,14 +6,20 @@
 //
 
 import SwiftUI
+import Firebase
+import FirebaseAuth
 
 struct AddAdminView: View {
+    
+    @State var punchsyncfb = PunchSyncFB()
     
     @State var yourcompanyID = ""
     @State var fullname = ""
     @State var email = ""
     @State var password = ""
     @State var confirmpassword = ""
+    
+    @State var errorMessage = ""
     
     var body: some View {
         
@@ -47,7 +53,13 @@ struct AddAdminView: View {
             TextFieldView(placeholder: "Confirm Password", text: $confirmpassword, isSecure: true, systemName: "lock")
             
             VStack {
-                ButtonView(buttontext: "Sign Up")
+                Button(action: {
+                    punchsyncfb.userRegister(email: email, password: password) { firebaseError in
+                        errorMessage = firebaseError ?? "" // Default to empty string if no Firebase error
+                    }
+                }) {
+                    ButtonView(buttontext: "Sign Up")
+                }
             }
             .padding(.vertical, 38)
             
