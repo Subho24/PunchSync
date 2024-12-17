@@ -9,8 +9,27 @@ import SwiftUI
 
 struct MoreTabView: View {
     var body: some View {
-        Text("More as Admin")
-            .font(.largeTitle)
+        // Profile Section
+        VStack(){
+            
+            HStack(spacing: 50) {
+                Circle()
+                    .fill(Color(hex: "ECE9D4"))
+                    .frame(width: 80, height: 80)
+                    .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                    .shadow(radius: 5)
+                    .padding(.bottom, 5)
+                
+                VStack{
+                    Text("Name Lastname")
+                        .font(.title3)
+                        .foregroundColor(.black)
+                    Text("Position")
+                        .foregroundColor(.gray)
+                }
+            }
+ //
+        }
     }
 }
 
