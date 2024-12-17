@@ -11,18 +11,17 @@ import Firebase
 struct DashboardTabView: View {
  
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 10) {
         
             // Profile Section
-            HStack(spacing: 50) {
+            HStack(alignment: .center, spacing: 50) {
                 Circle()
                     .fill(Color(hex: "ECE9D4"))
                     .frame(width: 80, height: 80)
                     .overlay(Circle().stroke(Color.white, lineWidth: 2))
                     .shadow(radius: 5)
-                    .padding(.bottom, 5)
                
-                VStack{
+                VStack(alignment: .leading, spacing: 5){
                     Text("Name Lastname")
                         .font(.title3)
                         .foregroundColor(.black)
@@ -153,7 +152,7 @@ struct DashboardTabView: View {
                             .background(Color(hex: "F5C87E"))
                             .cornerRadius(10)
                         }
-                        .padding(.horizontal)
+                        .padding()
                         
                         //Test Button slut
         }
