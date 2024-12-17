@@ -64,7 +64,7 @@ struct AddAdminView: View {
                         punchsyncfb.userRegister(email: email, password: password) { firebaseError in
                             errorMessage = firebaseError ?? "" // Default to empty string if no Firebase error
                         }
-                        saveAdminData()
+                        punchsyncfb.saveAdminData(fullName: fullName, email: email, yourcompanyID: yourcompanyID)
                     }
                 }) {
                     ButtonView(buttontext: "Sign Up")
@@ -73,21 +73,6 @@ struct AddAdminView: View {
             .padding(.vertical, 38)
             
         }
-    }
-    
-    func saveAdminData() {
-        var ref: DatabaseReference!
-        
-        ref = Database.database().reference()
-        
-        let userData: [String: Any] = [
-            "fullName": fullName,
-            "email": email,
-            "companyCode": yourcompanyID,
-            "admin": true
-        ]
-        
-        ref.child("users").childByAutoId().setValue(userData)
     }
 }
 

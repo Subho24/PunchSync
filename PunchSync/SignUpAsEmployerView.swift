@@ -61,7 +61,7 @@ struct SignUpAsEmployerView: View {
                         punchsyncfb.userRegister(email: email, password: password) { firebaseError in
                             errorMessage = firebaseError ?? "" // Default to empty string if no Firebase error
                         }
-                        saveUserData()
+                        punchsyncfb.saveUserData(fullName: fullName, personalNumber: personalNumber, email: email, companyCode: companyCode)
                     }
                 }) {
                     ButtonView(buttontext: "Sign Up")
@@ -69,22 +69,6 @@ struct SignUpAsEmployerView: View {
             }
             .padding(.vertical, 38)
         }
-    }
-    
-    func saveUserData() {
-        var ref: DatabaseReference!
-        
-        ref = Database.database().reference()
-        
-        let userData: [String: Any] = [
-            "fullName": fullName,
-            "personalSecurityNumber": personalNumber,
-            "email": email,
-            "companyCode": companyCode,
-            "admin": false
-        ]
-        
-        ref.child("users").childByAutoId().setValue(userData)
     }
 }
 

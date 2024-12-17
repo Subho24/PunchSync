@@ -44,4 +44,35 @@ import FirebaseAuth
             
         }
     }
+    
+    func saveAdminData(fullName: String, email: String, yourcompanyID: String) {
+        var ref: DatabaseReference!
+        
+        ref = Database.database().reference()
+        
+        let userData: [String: Any] = [
+            "fullName": fullName,
+            "email": email,
+            "companyCode": yourcompanyID,
+            "admin": true
+        ]
+        
+        ref.child("users").childByAutoId().setValue(userData)
+    }
+    
+    func saveUserData(fullName: String, personalNumber: String, email: String, companyCode: String) {
+        var ref: DatabaseReference!
+        
+        ref = Database.database().reference()
+        
+        let userData: [String: Any] = [
+            "fullName": fullName,
+            "personalSecurityNumber": personalNumber,
+            "email": email,
+            "companyCode": companyCode,
+            "admin": false
+        ]
+        
+        ref.child("users").childByAutoId().setValue(userData)
+    }
 }
