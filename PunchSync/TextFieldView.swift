@@ -13,6 +13,7 @@ struct TextFieldView: View {
     @Binding var text: String
     var isSecure: Bool = false
     var systemName: String
+    var onChange: (() -> Void)? = nil
     
     var body: some View {
             HStack {
@@ -40,6 +41,9 @@ struct TextFieldView: View {
             )
             .padding(.horizontal, 45) // Outer horizontal padding
             .padding(.bottom, 10) // Spacing below the field
+            .onChange(of: text) {
+                onChange?()
+            }
         }
     }
 

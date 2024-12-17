@@ -11,7 +11,7 @@ import Firebase
 struct SignUpAsCompanyView: View {
     
     @State var companyName = ""
-    @State var organizationNumber = ""
+    @State var orgNumber = ""
     
     @State private var navigateToAddAdmin = false
     @State private var companyCode: String = ""
@@ -34,20 +34,21 @@ struct SignUpAsCompanyView: View {
                 
                 TextFieldView(placeholder: "Company Name", text: $companyName, isSecure: false, systemName: "person")
                 
-                TextFieldView(placeholder: "Organization Number", text: $organizationNumber, isSecure: false, systemName: "number")
+                TextFieldView(placeholder: "Organization Number", text: $orgNumber, isSecure: false, systemName: "number", onChange: {
+                    orgNumber = ValidationUtils.formatOrgNumber(orgNumber)
+                })
                 
                 Text(errorMessage ?? "")
                     .frame(height: 20)
                
                 Button(action: {
-                    if companyName.isEmpty || organizationNumber.isEmpty {
-                        errorMessage = "Please fill in all fields"
-                        navigateToAddAdmin = false
+                    if let validationError = ValidationUtils.validatesignUpAsCompany(companyName: companyName, orgNumber: orgNumber) {
+                        errorMessage = validationError
                     } else {
                         saveCompanyData()
                         navigateToAddAdmin = true
                         companyName = ""
-                        organizationNumber = ""
+                        orgNumber = ""
                     }
                 }) {
                     ButtonView(buttontext: "Next")
@@ -75,7 +76,7 @@ struct SignUpAsCompanyView: View {
         
         let companyData: [String: Any] = [
             "companyName": companyName,
-            "organizationNumber": organizationNumber,
+            "organizationNumber": orgNumber,
         ]
         
         ref.child("companies").child(newCompanyCode).setValue(companyData)
