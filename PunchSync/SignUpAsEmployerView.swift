@@ -11,12 +11,12 @@ import FirebaseAuth
 
 struct SignUpAsEmployerView: View {
     
-    @State var fullname = ""
+    @State var fullName = ""
     @State var email = ""
     @State var password = ""
-    @State var confirmpassword = ""
-    @State var companycode = ""
-    @State var personalsecuritynumber = ""
+    @State var confirmPassword = ""
+    @State var companyCode = ""
+    @State var personalNumber = ""
     
     @State var errorMessage = ""
     
@@ -37,26 +37,24 @@ struct SignUpAsEmployerView: View {
                 .font(.title2)
                 .padding(.vertical, 20)
             
-            TextFieldView(placeholder: "Full Name", text: $fullname, isSecure: false, systemName: "person")
+            TextFieldView(placeholder: "Full Name", text: $fullName, isSecure: false, systemName: "person")
             
-            TextFieldView(placeholder: "Personal Security Number", text: $personalsecuritynumber, isSecure: true, systemName: "lock")
+            TextFieldView(placeholder: "Personal Security Number", text: $personalNumber, isSecure: true, systemName: "lock")
             
             TextFieldView(placeholder: "Email", text: $email, isSecure: false, systemName: "envelope")
             
             TextFieldView(placeholder: "Password", text: $password, isSecure: true, systemName: "lock")
             
-            TextFieldView(placeholder: "Confirm Password", text: $confirmpassword, isSecure: true, systemName: "lock")
+            TextFieldView(placeholder: "Confirm Password", text: $confirmPassword, isSecure: true, systemName: "lock")
             
-            TextFieldView(placeholder: "Company Code", text: $companycode, isSecure: false, systemName: "number")
+            TextFieldView(placeholder: "Company Code", text: $companyCode, isSecure: false, systemName: "number")
             
             Text(errorMessage)
             
             VStack {
                 Button(action: {
-                    if fullname.isEmpty || personalsecuritynumber.isEmpty || email.isEmpty || password.isEmpty || confirmpassword.isEmpty || companycode.isEmpty {
-                        errorMessage = "Please fill out all fields."
-                    } else if password != confirmpassword {
-                        errorMessage = "Passwords do not match."
+                    if let validationError = ValidationUtils.validateRegisterInputs(fullName: fullName, email: email, password: password, confirmPassword: confirmPassword, companyCode: companyCode, personalNumber: personalNumber) {
+                        errorMessage = validationError
                     } else {
                         punchsyncfb.userRegister(email: email, password: password) { firebaseError in
                             errorMessage = firebaseError ?? "" // Default to empty string if no Firebase error
@@ -77,10 +75,10 @@ struct SignUpAsEmployerView: View {
         ref = Database.database().reference()
         
         let userData: [String: Any] = [
-            "fullName": fullname,
-            "personalSecurityNumber": personalsecuritynumber,
+            "fullName": fullName,
+            "personalSecurityNumber": personalNumber,
             "email": email,
-            "companyCode": companycode,
+            "companyCode": companyCode,
             "admin": false
         ]
         

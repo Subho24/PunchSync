@@ -50,7 +50,7 @@ struct ValidationUtils {
     }
     
     // General input validation for forms
-    static func validateRegisterInputs(fullName: String, email: String, password: String, confirmPassword: String) -> String? {
+    static func validateRegisterInputs(fullName: String, email: String, password: String, confirmPassword: String, companyCode: String, personalNumber: String? = nil) -> String? {
         if !isNotEmpty(fullName) {
             return "Name is required"
         } else if !isNotEmpty(email) {
@@ -61,6 +61,14 @@ struct ValidationUtils {
             return "Password must be at least 6 characters."
         } else if password != confirmPassword {
             return "Passwords do not match."
+        } else if !isNotEmpty(companyCode) {
+            return "Company code is required."
+        }
+        
+        if let personalNumber = personalNumber {
+            if !isNotEmpty(personalNumber) {
+                return "Personal number is required."
+            }
         }
         return nil
     }

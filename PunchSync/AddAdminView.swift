@@ -58,7 +58,7 @@ struct AddAdminView: View {
             
             VStack {
                 Button(action: {
-                    if let validationError = ValidationUtils.validateRegisterInputs(fullName: fullName, email: email, password: password, confirmPassword: confirmPassword) {
+                    if let validationError = ValidationUtils.validateRegisterInputs(fullName: fullName, email: email, password: password, confirmPassword: confirmPassword, companyCode: yourcompanyID) {
                         errorMessage = validationError
                     } else {
                         punchsyncfb.userRegister(email: email, password: password) { firebaseError in
