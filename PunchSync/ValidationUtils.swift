@@ -35,6 +35,51 @@ struct ValidationUtils {
         return digitsOnly
     }
     
+    static func isValidPersonalNumber(_ personalNumber: String) -> Bool {
+      
+        let digitsOnly = personalNumber.filter { $0.isNumber }
+            
+        guard digitsOnly.count == 10 || digitsOnly.count == 12 else {
+            return false
+        }
+            
+        // Om 12 siffror, ignorera de första två (för århundrade)
+        let trimmed = digitsOnly.count == 12 ? String(digitsOnly.suffix(10)) : digitsOnly
+            
+        let datePart = String(trimmed.prefix(6)) // YYYYMM eller YYMMDD
+        _ = String(trimmed.suffix(4)) // -XXXX
+            
+        // Validera datumet
+        guard isValidDate(datePart: datePart) else {
+            return false
+        }
+            
+        return isValidLuhn(trimmed)
+    }
+        
+    // Validate the date
+    private static func isValidDate(datePart: String) -> Bool {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyMMdd"
+        dateFormatter.locale = Locale(identifier: "sv_SE")
+        return dateFormatter.date(from: datePart) != nil
+    }
+    
+    // Luhn algorithm
+    private static func isValidLuhn(_ input: String) -> Bool {
+        let digits = input.compactMap { $0.wholeNumberValue }
+        guard digits.count == 10 else { return false }
+        
+        var sum = 0
+        for (index, digit) in digits.enumerated() {
+            let isOdd = index % 2 == 0
+            let multiplied = isOdd ? digit * 2 : digit
+            sum += multiplied > 9 ? multiplied - 9 : multiplied
+        }
+        
+        return sum % 10 == 0
+    }
+    
     static func validatesignUpAsCompany(companyName: String, orgNumber: String) -> String? {
         if companyName.isEmpty {
             return "Company name is required."
@@ -81,6 +126,8 @@ struct ValidationUtils {
         if let personalNumber = personalNumber {
             if !isNotEmpty(personalNumber) {
                 return "Personal number is required."
+            } else if !isValidPersonalNumber(personalNumber) {
+                return "Invalid personal number format."
             }
         }
         return nil
