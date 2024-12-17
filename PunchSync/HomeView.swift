@@ -23,11 +23,21 @@ struct HomeView: View {
     
       var body: some View {
           
-          Button(action: {
-              punchsyncfb.userLogout()
-          }) {
-              Text("Sign out")
-          }
+          HStack {
+                      Spacer()
+                      Button(action: {
+                          punchsyncfb.userLogout()
+                      }) {
+                          Text("Sign out")
+                              .font(.headline)
+                              .foregroundColor(.red)
+                              .padding(.horizontal, 10)
+                              .padding(.vertical, 5)
+                              .background(Color(hex: "ECE9D4"))
+                              .cornerRadius(10)
+                      }
+                  }
+          
           TabView {
               // Dashboard Tab
               VStack {
