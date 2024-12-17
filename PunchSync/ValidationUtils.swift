@@ -22,6 +22,19 @@ struct ValidationUtils {
         return digitsOnly
     }
     
+    static func formatPersonalNumber(_ input: String) -> String {
+        // Ta bort alla icke-siffror
+        let digitsOnly = input.filter { $0.isNumber }
+
+        // Formatera som "xxxxxxxx-xxxx"
+        if digitsOnly.count > 8 {
+            let prefix = String(digitsOnly.prefix(8))
+            let suffix = String(digitsOnly.suffix(from: digitsOnly.index(digitsOnly.startIndex, offsetBy: 8)))
+            return "\(prefix)-\(suffix.prefix(4))"
+        }
+        return digitsOnly
+    }
+    
     static func validatesignUpAsCompany(companyName: String, orgNumber: String) -> String? {
         if companyName.isEmpty {
             return "Company name is required."

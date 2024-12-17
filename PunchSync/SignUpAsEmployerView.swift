@@ -39,7 +39,9 @@ struct SignUpAsEmployerView: View {
             
             TextFieldView(placeholder: "Full Name", text: $fullName, isSecure: false, systemName: "person")
             
-            TextFieldView(placeholder: "Personal Security Number", text: $personalNumber, isSecure: true, systemName: "lock")
+            TextFieldView(placeholder: "Personal Number (12 numbers)", text: $personalNumber, isSecure: false, systemName: "lock", onChange: {
+                personalNumber = ValidationUtils.formatPersonalNumber(personalNumber)
+            })
             
             TextFieldView(placeholder: "Email", text: $email, isSecure: false, systemName: "envelope")
             
