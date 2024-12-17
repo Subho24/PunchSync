@@ -32,7 +32,7 @@ struct UnloggedView: View {
                }
                 
                 NavigationLink(destination: SignUpAsEmployerView()) {
-                    ButtonView(buttontext: "Sign Up as Employer")
+                    ButtonView(buttontext: "Sign Up as Employee")
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
