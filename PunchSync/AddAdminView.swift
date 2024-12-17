@@ -14,10 +14,10 @@ struct AddAdminView: View {
     @State var punchsyncfb = PunchSyncFB()
     
     @State var yourcompanyID = ""
-    @State var fullname = ""
+    @State var fullName = ""
     @State var email = ""
     @State var password = ""
-    @State var confirmpassword = ""
+    @State var confirmPassword = ""
     
     @State var errorMessage = ""
     
@@ -46,22 +46,26 @@ struct AddAdminView: View {
                 .disabled(yourcompanyID != "")
                 .foregroundStyle(Color.gray)
             
-            TextFieldView(placeholder: "Full Name", text: $fullname, isSecure: false, systemName: "person")
+            TextFieldView(placeholder: "Full Name", text: $fullName, isSecure: false, systemName: "person")
                 
             TextFieldView(placeholder: "Email", text: $email, isSecure: false, systemName: "envelope")
             
             TextFieldView(placeholder: "Password", text: $password, isSecure: true, systemName: "lock")
             
-            TextFieldView(placeholder: "Confirm Password", text: $confirmpassword, isSecure: true, systemName: "lock")
+            TextFieldView(placeholder: "Confirm Password", text: $confirmPassword, isSecure: true, systemName: "lock")
             
             Text(errorMessage)
             
             VStack {
                 Button(action: {
-                    punchsyncfb.userRegister(email: email, password: password) { firebaseError in
-                        errorMessage = firebaseError ?? "" // Default to empty string if no Firebase error
+                    if let validationError = ValidationUtils.validateRegisterInputs(fullName: fullName, email: email, password: password, confirmPassword: confirmPassword) {
+                        errorMessage = validationError
+                    } else {
+                        punchsyncfb.userRegister(email: email, password: password) { firebaseError in
+                            errorMessage = firebaseError ?? "" // Default to empty string if no Firebase error
+                        }
+                        saveAdminData()
                     }
-                    saveAdminData()
                 }) {
                     ButtonView(buttontext: "Sign Up")
                 }
@@ -77,7 +81,7 @@ struct AddAdminView: View {
         ref = Database.database().reference()
         
         let userData: [String: Any] = [
-            "fullName": fullname,
+            "fullName": fullName,
             "email": email,
             "companyCode": yourcompanyID,
             "admin": true
