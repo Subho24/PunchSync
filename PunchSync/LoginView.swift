@@ -36,8 +36,12 @@ struct LoginView: View {
             
             VStack {
                 Button(action: {
-                    punchsyncfb.userLogin(email: email, password: password) { firebaseError in
-                        errorMessage = firebaseError ?? "" // Default to empty string if no Firebase error
+                    if let validationError = ValidationUtils.validateLogin(email: email, password: password) {
+                        errorMessage = validationError
+                    } else {
+                        punchsyncfb.userLogin(email: email, password: password) { firebaseError in
+                            errorMessage = firebaseError ?? "" // Default to empty string if no Firebase error
+                        }
                     }
                 }) {
                     ButtonView(buttontext: "Log in")

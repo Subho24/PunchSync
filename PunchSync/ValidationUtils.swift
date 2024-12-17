@@ -132,5 +132,16 @@ struct ValidationUtils {
         }
         return nil
     }
+    
+    static func validateLogin(email: String, password: String) -> String? {
+        if !isNotEmpty(email) {
+            return "Email is required."
+        } else if !isValidEmail(email) {
+            return "Invalid email format."
+        } else if !isValidPassword(password) {
+            return "Password must be at least 6 characters."
+        }
+        return nil
+    }
 }
 
