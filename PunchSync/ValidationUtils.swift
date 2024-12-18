@@ -85,6 +85,8 @@ struct ValidationUtils {
             return "Company name is required."
         } else if orgNumber.isEmpty {
             return "Organisation number is required."
+        } else if orgNumber.count < 11 {
+            return "Organisation number should contain 10 numbers"
         }
         return nil
     }
