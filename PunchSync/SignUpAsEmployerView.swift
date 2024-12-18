@@ -51,7 +51,7 @@ struct SignUpAsEmployerView: View {
             
             TextFieldView(placeholder: "Company Code", text: $companyCode, isSecure: false, systemName: "number")
             
-            Text(errorMessage)
+            ErrorMessageView(errorMessage: errorMessage)
             
             VStack {
                 Button(action: {
@@ -67,7 +67,7 @@ struct SignUpAsEmployerView: View {
                     ButtonView(buttontext: "Sign Up")
                 }
             }
-            .padding(.vertical, 38)
+            .padding(.vertical, 10)
         }
     }
 }

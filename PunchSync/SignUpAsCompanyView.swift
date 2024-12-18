@@ -16,7 +16,7 @@ struct SignUpAsCompanyView: View {
     @State private var navigateToAddAdmin = false
     @State private var companyCode: String = ""
     
-    @State var errorMessage: String?
+    @State var errorMessage = ""
     
     var body: some View {
         
@@ -38,8 +38,7 @@ struct SignUpAsCompanyView: View {
                     orgNumber = ValidationUtils.formatOrgNumber(orgNumber)
                 })
                 
-                Text(errorMessage ?? "")
-                    .frame(height: 20)
+                ErrorMessageView(errorMessage: errorMessage)
                
                 Button(action: {
                     if let validationError = ValidationUtils.validatesignUpAsCompany(companyName: companyName, orgNumber: orgNumber) {
@@ -56,7 +55,7 @@ struct SignUpAsCompanyView: View {
                 .navigationDestination(isPresented: $navigateToAddAdmin) {
                     AddAdminView(yourcompanyID: companyCode)
                 }
-                .padding(.vertical, 18)
+                .padding(.vertical, 10)
             }
         }
     }

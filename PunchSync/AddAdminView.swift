@@ -54,7 +54,7 @@ struct AddAdminView: View {
             
             TextFieldView(placeholder: "Confirm Password", text: $confirmPassword, isSecure: true, systemName: "lock")
             
-            Text(errorMessage)
+            ErrorMessageView(errorMessage: errorMessage)
             
             VStack {
                 Button(action: {
@@ -70,8 +70,7 @@ struct AddAdminView: View {
                     ButtonView(buttontext: "Sign Up")
                 }
             }
-            .padding(.vertical, 38)
-            
+            .padding(.vertical, 10)
         }
     }
 }

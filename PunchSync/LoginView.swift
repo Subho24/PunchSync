@@ -32,7 +32,7 @@ struct LoginView: View {
             
             TextFieldView(placeholder: "Password", text: $password, isSecure: true, systemName: "lock")
             
-            Text(errorMessage)
+            ErrorMessageView(errorMessage: errorMessage)
             
             VStack {
                 Button(action: {
@@ -47,10 +47,8 @@ struct LoginView: View {
                     ButtonView(buttontext: "Log in")
                 }
             }
-            .padding(.vertical, 38)
-            
+            .padding(.vertical, 10)
         }
-        
     }
 }
 
