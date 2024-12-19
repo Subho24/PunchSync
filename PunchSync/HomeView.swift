@@ -51,7 +51,7 @@ struct HomeView: View {
               }
               // Check In / Out Tab
               VStack {
-                CheckTabView()
+                Check_in_out()
               }
               .tabItem {
                 VStack {
