@@ -73,6 +73,6 @@ import FirebaseAuth
             "admin": false
         ]
         
-        ref.child("users").childByAutoId().setValue(userData)
+        ref.child("users").child(personalNumber).setValue(userData)
     }
 }
