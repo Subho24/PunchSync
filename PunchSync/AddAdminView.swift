@@ -72,6 +72,7 @@ struct AddAdminView: View {
             }
             .padding(.vertical, 10)
         }
+        .navigationBarBackButtonHidden()
     }
 }
 
