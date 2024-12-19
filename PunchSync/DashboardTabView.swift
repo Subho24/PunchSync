@@ -87,7 +87,7 @@ struct DashboardTabView: View {
             
             // Title and Text Content
             VStack(alignment: .leading, spacing: 10) {
-                Text("Tittle text")
+                Text("Tittle hej hej")
                     .font(.title2)
                     .bold()
                 
