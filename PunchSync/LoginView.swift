@@ -32,21 +32,23 @@ struct LoginView: View {
             
             TextFieldView(placeholder: "Password", text: $password, isSecure: true, systemName: "lock")
             
-            Text(errorMessage)
+            ErrorMessageView(errorMessage: errorMessage)
             
             VStack {
                 Button(action: {
-                    punchsyncfb.userLogin(email: email, password: password) { firebaseError in
-                        errorMessage = firebaseError ?? "" // Default to empty string if no Firebase error
+                    if let validationError = ValidationUtils.validateLogin(email: email, password: password) {
+                        errorMessage = validationError
+                    } else {
+                        punchsyncfb.userLogin(email: email, password: password) { firebaseError in
+                            errorMessage = firebaseError ?? "" // Default to empty string if no Firebase error
+                        }
                     }
                 }) {
                     ButtonView(buttontext: "Log in")
                 }
             }
-            .padding(.vertical, 38)
-            
+            .padding(.vertical, 10)
         }
-        
     }
 }
 
