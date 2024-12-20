@@ -22,6 +22,21 @@ struct ValidationUtils {
         return digitsOnly
     }
     
+    static func isValidOrgNumber(_ orgNumber: String) -> Bool {
+ 
+        let digitsOnly = orgNumber.filter { $0.isNumber }
+        guard digitsOnly.count == 10 else {
+            return false
+        }
+        
+        guard let firstDigit = digitsOnly.first?.wholeNumberValue, (2...9).contains(firstDigit) else {
+            return false
+        }
+        
+        // Validera med Luhn-algoritmen
+        return isValidLuhn(digitsOnly)
+    }
+    
     static func formatPersonalNumber(_ input: String) -> String {
         // Ta bort alla icke-siffror
         let digitsOnly = input.filter { $0.isNumber }
@@ -84,9 +99,11 @@ struct ValidationUtils {
         if companyName.isEmpty {
             return "Company name is required."
         } else if orgNumber.isEmpty {
-            return "Organisation number is required."
+            return "Organization number is required."
         } else if orgNumber.count < 11 {
-            return "Organisation number should contain 10 numbers"
+            return "Organization number should contain 10 numbers"
+        } else if !isValidOrgNumber(orgNumber) {
+            return "Organization number is invalid."
         }
         return nil
     }
