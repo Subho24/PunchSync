@@ -8,93 +8,112 @@
 import SwiftUI
 
 struct MoreTabView: View {
+    
+    @State var navigateToAdminsView = false
+    @State var navigateToEmployerView = false
+    @State var navigateToAttestView = false
+    @State var navigateToScheduleView = false
+    @State var navigateToCompanyView = false
+    @State var navigateToRequestsView = false
+ 
+    
     var body: some View {
-        
-        // Profile Section
-        VStack(){
-            HStack(spacing: 50) {
-                Circle()
-                    .fill(Color(hex: "ECE9D4"))
-                    .frame(width: 80, height: 80)
-                    .overlay(Circle().stroke(Color.white, lineWidth: 2))
-                    .shadow(radius: 5)
-                    .padding(.bottom, 5)
+        NavigationStack {
+            VStack {
+                // Profile Section
+                VStack {
+                    HStack(spacing: 50) {
+                        Circle()
+                            .fill(Color(hex: "ECE9D4"))
+                            .frame(width: 80, height: 80)
+                            .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                            .shadow(radius: 5)
+                            .padding(.bottom, 5)
+                        
+                        VStack {
+                            Text("Name Lastname")
+                                .font(.title3)
+                                .foregroundColor(.black)
+                            Text("Position")
+                                .foregroundColor(.gray)
+                        }
+                    }
+                }
                 
-                VStack{
-                    Text("Name Lastname")
-                        .font(.title3)
-                        .foregroundColor(.black)
-                    Text("Position")
-                        .foregroundColor(.gray)
+                VStack(spacing: 30) {
+                    // First Row with 2 buttons
+                    HStack(spacing: 3) {
+                        
+                        Button(action: {
+                            navigateToAdminsView = true
+                        }) {
+                            ButtonMoreView(title: "Admins", icon: "person.2.fill", color: "283B34")
+                        }
+                        .navigationDestination(isPresented: $navigateToAdminsView) {
+                            AdminsView()
+                        }
+                        
+                        Button(action: {
+                            navigateToEmployerView = true
+                        }) {
+                            ButtonMoreView(title: "Employer", icon: "person.crop.circle.fill.badge.checkmark", color: "FE7E65")
+                        }
+                        .navigationDestination(isPresented: $navigateToEmployerView) {
+                                EmployerView()
+                        }
+                    }
+                    
+                    // Second Row with 2 buttons
+                    HStack(spacing: 3) {
+                        
+                        Button(action: {
+                            navigateToAttestView = true
+                        }) {
+                            ButtonMoreView(title: "Attest", icon: "checkmark.rectangle", color: "60BDCD")
+                        }
+                        .navigationDestination(isPresented: $navigateToAttestView) {
+                            AttestView()
+                        }
+                        
+                        Button(action: {
+                            navigateToScheduleView = true
+                        }) {
+                            ButtonMoreView(title: "Schedule", icon: "calendar", color: "8BC5A3")
+                        }
+                        .navigationDestination(isPresented: $navigateToScheduleView) {
+                            ScheduleView()
+                        }
+                    }
+                    
+                    // Third Row with 2 buttons
+                    HStack(spacing: 3) {
+                        
+                        Button(action: {
+                            navigateToCompanyView = true
+                        }) {
+                            ButtonMoreView(title: "Company", icon: "building.2.fill", color: "F5C87E")
+                        }
+                        .navigationDestination(isPresented: $navigateToCompanyView) {
+                            CompanyView()
+                        }
+                        
+                        Button(action: {
+                            navigateToRequestsView = true
+                        }) {
+                            ButtonMoreView(title: "Leave Requests", icon: "envelope.badge", color: "FE7E65")
+                        }
+                        .navigationDestination(isPresented: $navigateToRequestsView) {
+                            RequestsView()
+                        }
+                    }
                 }
             }
-            
+            .padding(.top, 50)
+            Spacer()
         }
-        .padding(.top, 50)
-        
-        VStack(spacing: 20) {
-            // First Row with 2 buttons
-            HStack(spacing: 3) {
-                createButton(title: "Admins", icon: "person.2.fill", color: "8BC5A3")
-                createButton(title: "Schedule", icon: "calendar", color: "F5C87E")
-            }
-            
-            // Second Row
-            HStack(spacing: 3) {
-                createButton(title: "Check In/Out", icon: "checkmark.rectangle", color: "7A9E6F")
-                createButton(title: "Company", icon: "building.2.fill", color: "F5A623")
-            }
-            
-            // Third Row
-            HStack(spacing: 3) {
-                createButton(title: "Employee Status", icon: "person.crop.circle.fill.badge.checkmark", color: "A3D8C8")
-                createButton(title: "Attendance", icon: "chart.bar.fill", color: "D56D89")
-            }
-            
-            // Fourth Row
-            HStack(spacing: 3) {
-                createButton(title: "Leave Requests", icon: "envelope.badge", color: "D6A72F")
-                createButton(title: "Reports&Analytics", icon: "doc.text.magnifyingglass", color: "F28C82")
-            }
-        }
-        .padding(.top, 50)
-        Spacer()
     }
-
-       // Helper function to create a button
-       private func createButton(title: String, icon: String, color: String) -> some View {
-           Button(action: {
-               print("\(title) button pressed")
-           }) {
-               HStack {
-                   ZStack {
-                       Circle()
-                           .fill(Color.white)
-                           .frame(width: 30, height: 30)
-                       
-                       Image(systemName: icon)
-                           .resizable()
-                           .scaledToFit()
-                           .frame(width: 17, height: 17)
-                           .foregroundColor(.black)
-                   }
-                   .padding(.leading, 10)
-                   
-                   Text(title)
-                       .font(.headline)
-                       .foregroundColor(.white)
-                   
-                   Spacer()
-               }
-               .frame(maxWidth: .infinity)
-               .padding()
-               .background(Color(hex: color))
-               .cornerRadius(10)
-           }
-           .padding(.horizontal)
-       }
-   }
-
+}
+            
 #Preview {
     MoreTabView()
 }

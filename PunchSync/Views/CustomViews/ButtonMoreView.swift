@@ -12,10 +12,8 @@ struct ButtonMoreView: View {
     var title: String
     var icon: String?
     var color: String
-    var action: () -> Void
     
     var body: some View {
-        Button(action: action) {
             HStack {
                 if let icon = icon {
                     ZStack {
@@ -43,16 +41,14 @@ struct ButtonMoreView: View {
             .background(Color(hex: color))
             .cornerRadius(10)
             .shadow(radius: 5)
-        }
+        
         .padding(.horizontal)
     }
 }
 
 #Preview {
     VStack {
-        ButtonMoreView(title: "Example Button", icon: "star.fill", color: "FE7E65") {
-            print("Button")
-        }
+        ButtonMoreView(title: "Example Button", icon: "star.fill", color: "FE7E65")
         
         }
     }
