@@ -60,19 +60,29 @@ import FirebaseAuth
         ref.child("users").childByAutoId().setValue(userData)
     }
     
-    func saveUserData(fullName: String, personalNumber: String, email: String, companyCode: String) {
+    func saveUserData(fullName: String, personalNumber: String, email: String, companyCode: String, completion: @escaping (Bool, String?) -> Void) {
         var ref: DatabaseReference!
         
         ref = Database.database().reference()
         
-        let userData: [String: Any] = [
-            "fullName": fullName,
-            "personalSecurityNumber": personalNumber,
-            "email": email,
-            "companyCode": companyCode,
-            "admin": false
-        ]
+        //First check if the personal number is already registered
+        ref.child("users").child(personalNumber).observeSingleEvent(of: .value) { snapshot in
+            if snapshot.exists() {
+                completion(false, "Personal number already registered.")
+            } else {
+                let userData: [String: Any] = [
+                    "fullName": fullName,
+                    "personalSecurityNumber": personalNumber,
+                    "email": email,
+                    "companyCode": companyCode,
+                    "admin": false
+                ]
+                
+                ref.child("users").child(personalNumber).setValue(userData)
+                completion(true, nil)
+            }
+            
+        }
         
-        ref.child("users").child(personalNumber).setValue(userData)
     }
 }
