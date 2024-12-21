@@ -11,6 +11,8 @@ import FirebaseAuth
 
 @Observable class PunchSyncFB {
     
+    var companyCode: String = "" 
+    
     func userLogin(email : String, password : String, completion: @escaping (String?) -> Void) {
         Task {
             do {
@@ -42,6 +44,37 @@ import FirebaseAuth
             try Auth.auth().signOut()
         } catch {
             
+        }
+    }
+    
+    func saveCompanyData(companyName: String, orgNumber: String, completion: @escaping (Bool, String?) -> Void) {
+        var ref: DatabaseReference!
+        
+        ref = Database.database().reference()
+        
+        func generateCompanyCode() -> String {
+            let characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+            return String((0..<10).map { _ in characters.randomElement()! })
+        }
+        
+        // First check if the organization number exists
+        ref.child("companies").child(orgNumber).observeSingleEvent(of: .value) { snapshot in
+            if snapshot.exists() {
+                completion(false, "This organization number is already registered.") // Company exists, return false
+            } else {
+                // Organization number doesn't exist, safe to save
+                let newCompanyCode = generateCompanyCode()
+                self.companyCode = newCompanyCode
+                
+                let companyData: [String: Any] = [
+                    "companyName": companyName,
+                    "organizationNumber": orgNumber,
+                    "companyCode": newCompanyCode
+                ]
+                
+                ref.child("companies").child(orgNumber).setValue(companyData)
+                completion(true, nil) // Successfully saved, return true
+            }
         }
     }
     

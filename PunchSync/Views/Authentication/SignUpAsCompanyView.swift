@@ -10,6 +10,8 @@ import Firebase
 
 struct SignUpAsCompanyView: View {
     
+    @State var punchsyncfb = PunchSyncFB()
+    
     @State var companyName = ""
     @State var orgNumber = ""
     
@@ -44,53 +46,23 @@ struct SignUpAsCompanyView: View {
                     if let validationError = ValidationUtils.validatesignUpAsCompany(companyName: companyName, orgNumber: orgNumber) {
                         errorMessage = validationError
                     } else {
-                        saveCompanyData { success in
-                            if success {
-                                navigateToAddAdmin = true
-                                companyName = ""
-                                orgNumber = ""
-                            }
+                        punchsyncfb.saveCompanyData(companyName: companyName, orgNumber: orgNumber) { success, error in
+                            if let error = error {
+                                   self.errorMessage = error
+                               } else if success {
+                                   navigateToAddAdmin = true
+                                   self.companyName = ""
+                                   self.orgNumber = ""
+                               }
                         }
                     }
                 }) {
                     ButtonView(buttontext: "Next")
                 }
                 .navigationDestination(isPresented: $navigateToAddAdmin) {
-                    AddAdminView(yourcompanyID: companyCode)
+                    AddAdminView(yourcompanyID: punchsyncfb.companyCode)
                 }
                 .padding(.vertical, 10)
-            }
-        }
-    }
-    
-    func saveCompanyData(completion: @escaping (Bool) -> Void) {
-        var ref: DatabaseReference!
-        
-        ref = Database.database().reference()
-        
-        func generateCompanyCode() -> String {
-            let characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-            return String((0..<10).map { _ in characters.randomElement()! })
-        }
-        
-        // First check if the organization number exists
-        ref.child("companies").child(orgNumber).observeSingleEvent(of: .value) { snapshot in
-            if snapshot.exists() {
-                self.errorMessage = "This organization number is already registered."
-                completion(false) // Company exists, return false
-            } else {
-                // Organization number doesn't exist, safe to save
-                let newCompanyCode = generateCompanyCode()
-                self.companyCode = newCompanyCode
-                
-                let companyData: [String: Any] = [
-                    "companyName": companyName,
-                    "organizationNumber": orgNumber,
-                    "companyCode": newCompanyCode
-                ]
-                
-                ref.child("companies").child(orgNumber).setValue(companyData)
-                completion(true) // Successfully saved, return true
             }
         }
     }
