@@ -39,15 +39,18 @@ struct SignUpAsCompanyView: View {
                 })
                 
                 ErrorMessageView(errorMessage: errorMessage)
-               
+                
                 Button(action: {
                     if let validationError = ValidationUtils.validatesignUpAsCompany(companyName: companyName, orgNumber: orgNumber) {
                         errorMessage = validationError
                     } else {
-                        saveCompanyData()
-                        navigateToAddAdmin = true
-                        companyName = ""
-                        orgNumber = ""
+                        saveCompanyData { success in
+                            if success {
+                                navigateToAddAdmin = true
+                                companyName = ""
+                                orgNumber = ""
+                            }
+                        }
                     }
                 }) {
                     ButtonView(buttontext: "Next")
@@ -60,7 +63,7 @@ struct SignUpAsCompanyView: View {
         }
     }
     
-    func saveCompanyData() {
+    func saveCompanyData(completion: @escaping (Bool) -> Void) {
         var ref: DatabaseReference!
         
         ref = Database.database().reference()
@@ -70,15 +73,26 @@ struct SignUpAsCompanyView: View {
             return String((0..<10).map { _ in characters.randomElement()! })
         }
         
-        let newCompanyCode = generateCompanyCode()
-        self.companyCode = newCompanyCode
-        
-        let companyData: [String: Any] = [
-            "companyName": companyName,
-            "organizationNumber": orgNumber,
-        ]
-        
-        ref.child("companies").child(newCompanyCode).setValue(companyData)
+        // First check if the organization number exists
+        ref.child("companies").child(orgNumber).observeSingleEvent(of: .value) { snapshot in
+            if snapshot.exists() {
+                self.errorMessage = "This organization number is already registered."
+                completion(false) // Company exists, return false
+            } else {
+                // Organization number doesn't exist, safe to save
+                let newCompanyCode = generateCompanyCode()
+                self.companyCode = newCompanyCode
+                
+                let companyData: [String: Any] = [
+                    "companyName": companyName,
+                    "organizationNumber": orgNumber,
+                    "companyCode": newCompanyCode
+                ]
+                
+                ref.child("companies").child(orgNumber).setValue(companyData)
+                completion(true) // Successfully saved, return true
+            }
+        }
     }
 }
 
