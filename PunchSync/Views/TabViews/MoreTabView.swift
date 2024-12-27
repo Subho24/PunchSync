@@ -50,7 +50,7 @@ struct MoreTabView: View {
                             ButtonMoreView(title: "Admins", icon: "person.2.fill", color: "283B34")
                         }
                         .navigationDestination(isPresented: $navigateToAdminsView) {
-                            AdminsView()
+                            AddAdminView()
                         }
                         
                         Button(action: {

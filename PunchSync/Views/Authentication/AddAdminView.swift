@@ -23,28 +23,22 @@ struct AddAdminView: View {
     
     @State var admin: Bool = true
     
+    @State var showAlert = false
+    
     var body: some View {
         
         VStack {
             
             Image("Icon")
                 .resizable()
-                .frame(width: 180, height: 180)
+                .frame(width: 120, height: 120)
                 .padding(.leading, 25)
             
             Text("Add Admin")
                 .font(.title2)
                 .padding(.vertical, 20)
             
-            HStack {
-                Text("Your Company ID:")
-                    .padding(.leading, 45)
-                Spacer()
-            }
-            
-            TextFieldView(placeholder: "xxxxxxxxxx", text: $yourcompanyID, isSecure: false, systemName: "number")
-                .disabled(yourcompanyID != "")
-                .foregroundStyle(Color.gray)
+            TextFieldView(placeholder: "Company Code", text: $yourcompanyID, isSecure: false, systemName: "number")
             
             TextFieldView(placeholder: "Full Name", text: $fullName, isSecure: false, systemName: "person")
                 
@@ -58,10 +52,17 @@ struct AddAdminView: View {
             
             VStack {
                 Button(action: {
+                    
+                    // First get the current logged-in admin
+                    guard let currentAdmin = Auth.auth().currentUser else {
+                        errorMessage = "No admin is currently logged in"
+                        return
+                    }
                     if let validationError = ValidationUtils.validateRegisterInputs(fullName: fullName, email: email, password: password, confirmPassword: confirmPassword, companyCode: yourcompanyID) {
                         errorMessage = validationError
                     } else {
-                        punchsyncfb.createNewAdmin(email: email, password: password, fullName: fullName, yourcompanyID: yourcompanyID) { firebaseError in
+                        showAlert = true
+                        punchsyncfb.createNewAdmin(email: email, password: password, fullName: fullName, yourcompanyID: yourcompanyID, currentAdmin: currentAdmin) { firebaseError in
                             errorMessage = firebaseError ?? "" // Default to empty string if no Firebase error
                         }
                     }
@@ -69,9 +70,19 @@ struct AddAdminView: View {
                     ButtonView(buttontext: "Sign Up")
                 }
             }
+            .alert("New Admin Created", isPresented: $showAlert) {
+                Button("OK", role: .cancel) {
+                    // Optional: Clear the form fields after successful creation
+                    email = ""
+                    password = ""
+                    confirmPassword = ""
+                    fullName = ""
+                }
+            } message: {
+                Text("\(fullName) has been added as an admin.")
+            }
             .padding(.vertical, 10)
         }
-        .navigationBarBackButtonHidden()
     }
 }
 
