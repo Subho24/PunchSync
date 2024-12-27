@@ -153,4 +153,33 @@ import FirebaseAuth
             }
         }
     }
+    
+    func loadAdminData(adminData: AdminData) async {
+        guard let currentUser = Auth.auth().currentUser else {
+            print("No user is currently logged in")
+            return
+        }
+        
+        let userId = currentUser.uid
+        let email = currentUser.email ?? "No email found"
+        print("Current User ID: \(userId)")
+        print("Current User Email: \(email)")
+        
+        let ref = Database.database().reference()
+        
+        do {
+            let adminSnapshot = try await ref.child("users").child(userId).getData()
+            print("Admin Snapshot: \(adminSnapshot.value ?? "No data found")")
+            
+            guard let adminDataDict = adminSnapshot.value as? [String: Any] else {
+                print("Failed to get admin data")
+                return
+            }
+            
+            adminData.fullName = adminDataDict["fullName"] as? String ?? "Unknown Admin"
+            print("Admin Name: \(adminData.fullName)")
+        } catch {
+            print("Error fetching admin data: \(error.localizedDescription)")
+        }
+    }
 }

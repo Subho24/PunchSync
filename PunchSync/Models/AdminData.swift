@@ -6,3 +6,7 @@
 //
 
 import Foundation
+
+class AdminData: ObservableObject {
+    @Published var fullName: String = ""
+}
