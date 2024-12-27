@@ -118,4 +118,39 @@ import FirebaseAuth
         }
         
     }
+    
+    func createNewAdmin(email: String, password: String, fullName: String, yourcompanyID: String, completion: @escaping (String?) -> Void) {
+        // Step 1: Create the new user in Firebase Authentication
+        Auth.auth().createUser(withEmail: email, password: password) { authResult, error in
+            if let error = error {
+                print("Error creating user: \(error.localizedDescription)")
+                completion(error.localizedDescription)
+                return
+            }
+            guard let user = authResult?.user else {
+                print("User creation failed.")
+                completion("User creation failed.")
+                return
+            }
+            print("User created with UID: \(user.uid)")
+            
+            // Step 2: Add the new user's details to Realtime Database
+            let databaseRef = Database.database().reference()
+            let userDetails: [String: Any] = [
+                "fullName": fullName,
+                "email": email,
+                "companyCode": yourcompanyID,
+                "admin": true
+            ]
+            databaseRef.child("users").child(user.uid).setValue(userDetails) { error, _ in
+                if let error = error {
+                    print("Error adding user to database: \(error.localizedDescription)")
+                    completion(error.localizedDescription)
+                } else {
+                    print("User added to Realtime Database successfully!")
+                    completion(nil)
+                }
+            }
+        }
+    }
 }

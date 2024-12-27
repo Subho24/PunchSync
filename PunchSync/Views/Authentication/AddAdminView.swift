@@ -61,10 +61,9 @@ struct AddAdminView: View {
                     if let validationError = ValidationUtils.validateRegisterInputs(fullName: fullName, email: email, password: password, confirmPassword: confirmPassword, companyCode: yourcompanyID) {
                         errorMessage = validationError
                     } else {
-                        punchsyncfb.userRegister(email: email, password: password) { firebaseError in
+                        punchsyncfb.createNewAdmin(email: email, password: password, fullName: fullName, yourcompanyID: yourcompanyID) { firebaseError in
                             errorMessage = firebaseError ?? "" // Default to empty string if no Firebase error
                         }
-                        punchsyncfb.saveAdminData(fullName: fullName, email: email, yourcompanyID: yourcompanyID)
                     }
                 }) {
                     ButtonView(buttontext: "Sign Up")
