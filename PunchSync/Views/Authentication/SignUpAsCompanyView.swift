@@ -12,57 +12,130 @@ struct SignUpAsCompanyView: View {
     
     @State var punchsyncfb = PunchSyncFB()
     
+    // Company registration states
     @State var companyName = ""
     @State var orgNumber = ""
+    @State var companyFormDisabled = false
     
-    @State private var navigateToAddAdmin = false
+    // Admin profile states
     @State private var companyCode: String = ""
+    @State var yourcompanyID = ""
+    @State var fullName = ""
+    @State var email = ""
+    @State var password = ""
+    @State var confirmPassword = ""
+    @State var admin: Bool = true
     
+    // UI States
     @State var errorMessage = ""
+    @State var showNext = false
+    
+    // Animation States
+    @State private var companyFormOffset: CGFloat = 0
+    @State private var companyFormScale: CGFloat = 1
+    @State private var adminFormOffset: CGFloat = 1000 // Start off-screen
     
     var body: some View {
         
         NavigationStack {
-            VStack {
-                
-                Image("Icon")
-                    .resizable()
-                    .frame(width: 180, height: 180)
-                    .padding(.leading, 25)
-                
-                Text("Sign Up As Company")
-                    .font(.title2)
-                    .padding(.vertical, 50)
-                
-                TextFieldView(placeholder: "Company Name", text: $companyName, isSecure: false, systemName: "person")
-                
-                TextFieldView(placeholder: "Organization Number", text: $orgNumber, isSecure: false, systemName: "number", onChange: {
-                    orgNumber = ValidationUtils.formatOrgNumber(orgNumber)
-                })
-                
-                ErrorMessageView(errorMessage: errorMessage)
-                
-                Button(action: {
-                    if let validationError = ValidationUtils.validatesignUpAsCompany(companyName: companyName, orgNumber: orgNumber) {
-                        errorMessage = validationError
-                    } else {
-                        punchsyncfb.saveCompanyData(companyName: companyName, orgNumber: orgNumber) { success, error in
-                            if let error = error {
-                                   self.errorMessage = error
-                               } else if success {
-                                   navigateToAddAdmin = true
-                                   self.companyName = ""
-                                   self.orgNumber = ""
-                               }
+            ScrollView {
+                VStack {
+                    Image("Icon")
+                        .resizable()
+                        .frame(width: 180, height: 180)
+                        .padding(.leading, 25)
+                    
+                    
+                    Text("Sign Up As Company")
+                        .font(.title2)
+                        .padding(.vertical, 50)
+                        .opacity(showNext ? 0 : 1)
+                    
+                    Group {
+                        TextFieldView(placeholder: "Company Name", text: $companyName, isSecure: false, systemName: "person")
+                        
+                        TextFieldView(placeholder: "Organization Number", text: $orgNumber, isSecure: false, systemName: "number", onChange: {
+                            orgNumber = ValidationUtils.formatOrgNumber(orgNumber)
+                        })
+                        
+                        if !showNext {
+                            ErrorMessageView(errorMessage: errorMessage)
+                            
+                            Button(action: {
+                                if let validationError = ValidationUtils.validatesignUpAsCompany(companyName: companyName, orgNumber: orgNumber) {
+                                    errorMessage = validationError
+                                } else {
+                                    punchsyncfb.saveCompanyData(companyName: companyName, orgNumber: orgNumber) { success, error in
+                                        if let error = error {
+                                            self.errorMessage = error
+                                        } else if success {
+                                            showNext = true
+                                            yourcompanyID = punchsyncfb.companyCode
+                                        }
+                                    }
+                                }
+                            }) {
+                                ButtonView(buttontext: "Next")
+                            }
                         }
                     }
-                }) {
-                    ButtonView(buttontext: "Next")
+                    .opacity(companyFormDisabled ? 0.6 : 1)
+                    .offset(y: companyFormOffset)
+                    .scaleEffect(companyFormScale)
+                    
+                    if showNext {
+                        VStack {
+                            
+                            Text("Add Profile")
+                                .font(.title2)
+                                .padding(.vertical, 20)
+                            
+                            HStack {
+                                Text("Your Company ID:")
+                                    .padding(.leading, 45)
+                                Spacer()
+                            }
+                            
+                            TextFieldView(placeholder: "xxxxxxxxxx", text: $yourcompanyID, isSecure: false, systemName: "number")
+                                .disabled(true)
+                                .foregroundStyle(Color.gray)
+                            
+                            TextFieldView(placeholder: "Full Name", text: $fullName, isSecure: false, systemName: "person")
+                            
+                            TextFieldView(placeholder: "Email", text: $email, isSecure: false, systemName: "envelope")
+                            
+                            TextFieldView(placeholder: "Password", text: $password, isSecure: true, systemName: "lock")
+                            
+                            TextFieldView(placeholder: "Confirm Password", text: $confirmPassword, isSecure: true, systemName: "lock")
+                            
+                            ErrorMessageView(errorMessage: errorMessage)
+                            
+                            VStack {
+                                Button(action: {
+                                    if let validationError = ValidationUtils.validateRegisterInputs(fullName: fullName, email: email, password: password, confirmPassword: confirmPassword, companyCode: yourcompanyID) {
+                                        errorMessage = validationError
+                                    } else {
+                                        punchsyncfb.createProfile(email: email, password: password, fullName: fullName, yourcompanyID: yourcompanyID) { firebaseError in
+                                            errorMessage = firebaseError ?? "" // Default to empty string if no Firebase error
+                                        }
+                                    }
+                                }) {
+                                    ButtonView(buttontext: "Add")
+                                }
+                            }
+                            .padding(.vertical, 10)
+                        }
+                        .offset(y: adminFormOffset)
+                        .onAppear {
+                           withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                               adminFormOffset = 0
+                               companyFormOffset = -50  // Slide up
+                               companyFormScale = 0.95  // Slightly reduce size
+                           }
+                       }
+                    }
                 }
-                .navigationDestination(isPresented: $navigateToAddAdmin) {
-                    AddAdminView(yourcompanyID: punchsyncfb.companyCode)
-                }
-                .padding(.vertical, 10)
+                .padding(.top, 50)
             }
         }
     }
