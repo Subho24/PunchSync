@@ -11,6 +11,8 @@ import FirebaseAuth
 
 struct AddAdminView: View {
     
+    @Environment(\.dismiss) var dismiss
+    
     @State var punchsyncfb = PunchSyncFB()
     
     @State var yourcompanyID = ""
@@ -39,6 +41,7 @@ struct AddAdminView: View {
                 .padding(.vertical, 20)
             
             TextFieldView(placeholder: "Company Code", text: $yourcompanyID, isSecure: false, systemName: "number")
+                .disabled(true)
             
             TextFieldView(placeholder: "Full Name", text: $fullName, isSecure: false, systemName: "person")
                 
@@ -61,13 +64,22 @@ struct AddAdminView: View {
                     if let validationError = ValidationUtils.validateRegisterInputs(fullName: fullName, email: email, password: password, confirmPassword: confirmPassword, companyCode: yourcompanyID) {
                         errorMessage = validationError
                     } else {
-                        showAlert = true
                         punchsyncfb.createNewAdmin(email: email, password: password, fullName: fullName, yourcompanyID: yourcompanyID, currentAdmin: currentAdmin) { firebaseError in
-                            errorMessage = firebaseError ?? "" // Default to empty string if no Firebase error
+                            if let error = firebaseError {
+                                errorMessage = error
+                            } else {
+                                errorMessage = ""
+                                showAlert = true
+                                // Clear form fields only on success
+                                email = ""
+                                password = ""
+                                confirmPassword = ""
+                                fullName = ""
+                            }
                         }
                     }
                 }) {
-                    ButtonView(buttontext: "Sign Up")
+                    ButtonView(buttontext: "Add")
                 }
             }
             .alert("New Admin Created", isPresented: $showAlert) {
@@ -77,6 +89,7 @@ struct AddAdminView: View {
                     password = ""
                     confirmPassword = ""
                     fullName = ""
+                    dismiss()
                 }
             } message: {
                 Text("\(fullName) has been added as an admin.")
