@@ -98,6 +98,13 @@ struct SignUpAsCompanyView: View {
                     }
                     
                     if showNext {
+                        
+                        Text("You can update your company information after you have created a profile.")
+                            .font(.footnote)
+                            .padding(.horizontal, 45)
+                            .padding(.top, -50)
+                            .foregroundStyle(Color.gray)
+                    
                         VStack {
                             
                             Text("Add Profile")
