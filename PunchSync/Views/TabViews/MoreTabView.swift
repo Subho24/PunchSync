@@ -8,13 +8,16 @@
 import SwiftUI
 
 struct MoreTabView: View {
-    
+        
     @State var navigateToAdminsView = false
     @State var navigateToEmployerView = false
     @State var navigateToAttestView = false
     @State var navigateToScheduleView = false
     @State var navigateToCompanyView = false
     @State var navigateToRequestsView = false
+    
+    @StateObject private var adminData = AdminData()
+    @State var punchsyncfb = PunchSyncFB()
  
     
     var body: some View {
@@ -31,11 +34,13 @@ struct MoreTabView: View {
                             .padding(.bottom, 5)
                         
                         VStack {
-                            Text("Name Lastname")
-                                .font(.title3)
-                                .foregroundColor(.black)
-                            Text("Position")
-                                .foregroundColor(.gray)
+                            Text("Admin: \(adminData.fullName)")
+                                .font(.headline)
+                            Text("Company Code: \(adminData.companyCode)")
+                        }
+                        .task {
+                            // Load admin data when the view appears
+                            await punchsyncfb.loadAdminData(adminData: adminData)
                         }
                     }
                 }
@@ -50,7 +55,7 @@ struct MoreTabView: View {
                             ButtonMoreView(title: "Admins", icon: "person.2.fill", color: "283B34")
                         }
                         .navigationDestination(isPresented: $navigateToAdminsView) {
-                            AddAdminView()
+                            AddAdminView(yourcompanyID: adminData.companyCode)
                         }
                         
                         Button(action: {
