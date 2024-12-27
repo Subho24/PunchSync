@@ -227,7 +227,10 @@ import FirebaseAuth
             }
             
             adminData.fullName = adminDataDict["fullName"] as? String ?? "Unknown Admin"
+            adminData.companyCode = adminDataDict["companyCode"] as? String ?? "Unknown Company Code"
+            
             print("Admin Name: \(adminData.fullName)")
+            print("Admin company code: \(adminData.companyCode)")
         } catch {
             print("Error fetching admin data: \(error.localizedDescription)")
         }
