@@ -52,13 +52,15 @@ struct SignUpAsCompanyView: View {
                     
                     Group {
                         VStack {
-                            TextFieldView(placeholder: "Company Name", text: $companyName, isSecure: false, systemName: "person")
+                            TextFieldView(placeholder: "Company Name", text: $companyName, isSecure: false, systemName: "person", onChange: { errorMessage = ""
+                            })
                                 .disabled(showNext)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                                 .opacity(showNext ? 0.8 : 1)
                             
                             TextFieldView(placeholder: "Organization Number", text: $orgNumber, isSecure: false, systemName: "number", onChange: {
-                                orgNumber = ValidationUtils.formatOrgNumber(orgNumber)
+                                orgNumber = ValidationUtils.formatOrgNumber(orgNumber);
+                                errorMessage = ""
                             })
                             .disabled(showNext)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)

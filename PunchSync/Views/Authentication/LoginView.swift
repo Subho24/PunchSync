@@ -28,9 +28,13 @@ struct LoginView: View {
                 .font(.title2)
                 .padding(.vertical, 50)
             
-            TextFieldView(placeholder: "Email", text: $email, isSecure: false, systemName: "envelope")
+            TextFieldView(placeholder: "Email", text: $email, isSecure: false, systemName: "envelope", onChange: {
+                errorMessage = ""
+            })
             
-            TextFieldView(placeholder: "Password", text: $password, isSecure: true, systemName: "lock")
+            TextFieldView(placeholder: "Password", text: $password, isSecure: true, systemName: "lock", onChange: {
+                errorMessage = ""
+            })
             
             ErrorMessageView(errorMessage: errorMessage)
             

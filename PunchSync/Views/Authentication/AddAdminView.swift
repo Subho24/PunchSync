@@ -43,13 +43,13 @@ struct AddAdminView: View {
             TextFieldView(placeholder: "Company Code", text: $yourcompanyID, isSecure: false, systemName: "number")
                 .disabled(true)
             
-            TextFieldView(placeholder: "Full Name", text: $fullName, isSecure: false, systemName: "person")
+            TextFieldView(placeholder: "Full Name", text: $fullName, isSecure: false, systemName: "person", onChange: { errorMessage = ""})
                 
-            TextFieldView(placeholder: "Email", text: $email, isSecure: false, systemName: "envelope")
+            TextFieldView(placeholder: "Email", text: $email, isSecure: false, systemName: "envelope", onChange: { errorMessage = ""})
             
-            TextFieldView(placeholder: "Password", text: $password, isSecure: true, systemName: "lock")
+            TextFieldView(placeholder: "Password", text: $password, isSecure: true, systemName: "lock", onChange: { errorMessage = ""})
             
-            TextFieldView(placeholder: "Confirm Password", text: $confirmPassword, isSecure: true, systemName: "lock")
+            TextFieldView(placeholder: "Confirm Password", text: $confirmPassword, isSecure: true, systemName: "lock", onChange: { errorMessage = ""})
             
             ErrorMessageView(errorMessage: errorMessage)
             

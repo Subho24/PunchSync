@@ -37,19 +37,22 @@ struct SignUpAsEmployerView: View {
                 .font(.title2)
                 .padding(.vertical, 20)
             
-            TextFieldView(placeholder: "Full Name", text: $fullName, isSecure: false, systemName: "person")
-            
-            TextFieldView(placeholder: "Personal Number (12 numbers)", text: $personalNumber, isSecure: false, systemName: "lock", onChange: {
-                personalNumber = ValidationUtils.formatPersonalNumber(personalNumber)
+            TextFieldView(placeholder: "Full Name", text: $fullName, isSecure: false, systemName: "person", onChange: {
+                errorMessage = ""
             })
             
-            TextFieldView(placeholder: "Email", text: $email, isSecure: false, systemName: "envelope")
+            TextFieldView(placeholder: "Personal Number (12 numbers)", text: $personalNumber, isSecure: false, systemName: "lock", onChange: {
+                personalNumber = ValidationUtils.formatPersonalNumber(personalNumber);
+                errorMessage = ""
+            })
             
-            TextFieldView(placeholder: "Password", text: $password, isSecure: true, systemName: "lock")
+            TextFieldView(placeholder: "Email", text: $email, isSecure: false, systemName: "envelope", onChange: { errorMessage = ""})
             
-            TextFieldView(placeholder: "Confirm Password", text: $confirmPassword, isSecure: true, systemName: "lock")
+            TextFieldView(placeholder: "Password", text: $password, isSecure: true, systemName: "lock", onChange: { errorMessage = ""})
             
-            TextFieldView(placeholder: "Company Code", text: $companyCode, isSecure: false, systemName: "number")
+            TextFieldView(placeholder: "Confirm Password", text: $confirmPassword, isSecure: true, systemName: "lock", onChange: { errorMessage = ""})
+            
+            TextFieldView(placeholder: "Company Code", text: $companyCode, isSecure: false, systemName: "number", onChange: { errorMessage = ""})
             
             ErrorMessageView(errorMessage: errorMessage)
             
