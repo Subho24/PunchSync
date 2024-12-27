@@ -119,7 +119,7 @@ import FirebaseAuth
         
     }
     
-    func createNewAdmin(email: String, password: String, fullName: String, yourcompanyID: String, completion: @escaping (String?) -> Void) {
+    func createProfile(email: String, password: String, fullName: String, yourcompanyID: String, completion: @escaping (String?) -> Void) {
         // Step 1: Create the new user in Firebase Authentication
         Auth.auth().createUser(withEmail: email, password: password) { authResult, error in
             if let error = error {
@@ -149,6 +149,56 @@ import FirebaseAuth
                 } else {
                     print("User added to Realtime Database successfully!")
                     completion(nil)
+                }
+            }
+        }
+    }
+    
+    func createNewAdmin(email: String, password: String, fullName: String, yourcompanyID: String,currentAdmin: User, completion: @escaping (String?) -> Void
+    ) {
+        // Current admin UID is non-optional in User object
+        let currentAdminUID = currentAdmin.uid
+        
+        // First, verify the current user is actually an admin
+        let databaseRef = Database.database().reference()
+        databaseRef.child("users").child(currentAdminUID).observeSingleEvent(of: .value) { snapshot in
+            guard let userData = snapshot.value as? [String: Any],
+                  let isAdmin = userData["admin"] as? Bool,
+                  isAdmin else {
+                completion("Current user is not authorized to create admins")
+                return
+            }
+            
+            // Create new admin account using Admin SDK
+            Auth.auth().createUser(withEmail: email, password: password) { authResult, error in
+                if let error = error {
+                    print("Error creating user: \(error.localizedDescription)")
+                    completion(error.localizedDescription)
+                    return
+                }
+                
+                guard let newUser = authResult?.user else {
+                    completion("User creation failed")
+                    return
+                }
+                
+                // Add the new admin details to Realtime Database
+                let userDetails: [String: Any] = [
+                    "fullName": fullName,
+                    "email": email,
+                    "companyCode": yourcompanyID,
+                    "admin": true,
+                    "createdBy": currentAdminUID,
+                ]
+                
+                databaseRef.child("users").child(newUser.uid).setValue(userDetails) { error, _ in
+                    if let error = error {
+                        print("Error adding user to database: \(error.localizedDescription)")
+                        completion(error.localizedDescription)
+                    } else {
+                        print("New admin added to Realtime Database successfully!")
+                        completion(nil)
+                    }
                 }
             }
         }
