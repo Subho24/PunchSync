@@ -46,17 +46,29 @@ struct SignUpAsCompanyView: View {
                         .padding(.leading, 25)
                     
                     
-                    Text("Sign Up As Company")
+                    Text(showNext ? "Your company is registered!" : "Sign Up As Company")
                         .font(.title2)
                         .padding(.vertical, 50)
-                        .opacity(showNext ? 0 : 1)
                     
                     Group {
-                        TextFieldView(placeholder: "Company Name", text: $companyName, isSecure: false, systemName: "person")
-                        
-                        TextFieldView(placeholder: "Organization Number", text: $orgNumber, isSecure: false, systemName: "number", onChange: {
-                            orgNumber = ValidationUtils.formatOrgNumber(orgNumber)
-                        })
+                        VStack {
+                            TextFieldView(placeholder: "Company Name", text: $companyName, isSecure: false, systemName: "person")
+                                .disabled(showNext)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .opacity(showNext ? 0.8 : 1)
+                            
+                            TextFieldView(placeholder: "Organization Number", text: $orgNumber, isSecure: false, systemName: "number", onChange: {
+                                orgNumber = ValidationUtils.formatOrgNumber(orgNumber)
+                            })
+                            .disabled(showNext)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .opacity(showNext ? 0.8 : 1)
+                        }
+                        .padding(.vertical)
+                        .background(showNext ? Color(.systemGray6) : Color(.systemBackground))
+                        .cornerRadius(12)
+                        .offset(y: companyFormOffset)
+                        .scaleEffect(companyFormScale)
                         
                         if !showNext {
                             ErrorMessageView(errorMessage: errorMessage)
@@ -69,7 +81,10 @@ struct SignUpAsCompanyView: View {
                                         if let error = error {
                                             self.errorMessage = error
                                         } else if success {
-                                            showNext = true
+                                            withAnimation {
+                                                showNext = true
+                                                companyFormDisabled = true
+                                            }
                                             yourcompanyID = punchsyncfb.companyCode
                                         }
                                     }
@@ -79,9 +94,6 @@ struct SignUpAsCompanyView: View {
                             }
                         }
                     }
-                    .opacity(companyFormDisabled ? 0.6 : 1)
-                    .offset(y: companyFormOffset)
-                    .scaleEffect(companyFormScale)
                     
                     if showNext {
                         VStack {
