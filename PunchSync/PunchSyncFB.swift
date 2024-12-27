@@ -98,23 +98,35 @@ import FirebaseAuth
         
         ref = Database.database().reference()
         
-        //First check if the personal number is already registered
-        ref.child("users").child(personalNumber).observeSingleEvent(of: .value) { snapshot in
-            if snapshot.exists() {
-                completion(false, "Personal number already registered.")
-            } else {
-                let userData: [String: Any] = [
-                    "fullName": fullName,
-                    "personalSecurityNumber": personalNumber,
-                    "email": email,
-                    "companyCode": companyCode,
-                    "admin": false
-                ]
-                
-                ref.child("users").child(personalNumber).setValue(userData)
-                completion(true, nil)
+        validateCompanyCode(companyCode: companyCode) { isValid, error in
+            if let error = error {
+                completion(false, error)
+                return
             }
             
+            guard isValid else {
+                completion(false, "Invalid company code")
+                return
+            }
+            
+            //First check if the personal number is already registered
+            ref.child("users").child(personalNumber).observeSingleEvent(of: .value) { snapshot in
+                if snapshot.exists() {
+                    completion(false, "Personal number already registered.")
+                } else {
+                    let userData: [String: Any] = [
+                        "fullName": fullName,
+                        "personalSecurityNumber": personalNumber,
+                        "email": email,
+                        "companyCode": companyCode,
+                        "admin": false
+                    ]
+                    
+                    ref.child("users").child(personalNumber).setValue(userData)
+                    completion(true, nil)
+                }
+                
+            }
         }
         
     }
@@ -235,4 +247,24 @@ import FirebaseAuth
             print("Error fetching admin data: \(error.localizedDescription)")
         }
     }
+    
+    func validateCompanyCode(companyCode: String, completion: @escaping (Bool, String?) -> Void) {
+        let databaseRef = Database.database().reference()
+        
+        // Check users node for any existing user with this company code
+        databaseRef.child("users").queryOrdered(byChild: "companyCode")
+            .queryEqual(toValue: companyCode)
+            .observeSingleEvent(of: .value) { snapshot in
+                if snapshot.exists() {
+                    // Company code exists in database
+                    completion(true, nil)
+                } else {
+                    // Company code not found
+                    completion(false, "Invalid company code. Please check with your administrator.")
+                }
+            } withCancel: { error in
+                completion(false, "Error validating company code: \(error.localizedDescription)")
+            }
+    }
+
 }
