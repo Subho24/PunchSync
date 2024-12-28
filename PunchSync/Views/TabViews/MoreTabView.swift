@@ -39,8 +39,13 @@ struct MoreTabView: View {
                             Text("Company Code: \(adminData.companyCode)")
                         }
                         .task {
-                            // Load admin data when the view appears
-                            await punchsyncfb.loadAdminData(adminData: adminData)
+                            punchsyncfb.loadAdminData(adminData: adminData) { success, error in
+                                if success {
+                                    print("Admin data loaded successfully")
+                                } else if let error = error {
+                                    print("Error loading admin data: \(error.localizedDescription)")
+                                }
+                            }
                         }
                     }
                 }

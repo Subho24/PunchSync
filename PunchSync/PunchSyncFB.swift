@@ -216,35 +216,26 @@ import FirebaseAuth
         }
     }
     
-    func loadAdminData(adminData: AdminData) async {
+    func loadAdminData(adminData: AdminData, completion: @escaping (Bool, Error?) -> Void) {
+        let ref = Database.database().reference()
+        
         guard let currentUser = Auth.auth().currentUser else {
-            print("No user is currently logged in")
+            completion(false, NSError(domain: "", code: 401, userInfo: [NSLocalizedDescriptionKey: "No user is currently logged in"]))
             return
         }
         
         let userId = currentUser.uid
-        let email = currentUser.email ?? "No email found"
-        print("Current User ID: \(userId)")
-        print("Current User Email: \(email)")
         
-        let ref = Database.database().reference()
-        
-        do {
-            let adminSnapshot = try await ref.child("users").child(userId).getData()
-            print("Admin Snapshot: \(adminSnapshot.value ?? "No data found")")
-            
-            guard let adminDataDict = adminSnapshot.value as? [String: Any] else {
-                print("Failed to get admin data")
+        ref.child("users").child(userId).observeSingleEvent(of: .value) { snapshot in
+            guard let data = snapshot.value as? [String: Any] else {
+                completion(false, NSError(domain: "", code: 404, userInfo: [NSLocalizedDescriptionKey: "Admin data not found"]))
                 return
             }
             
-            adminData.fullName = adminDataDict["fullName"] as? String ?? "Unknown Admin"
-            adminData.companyCode = adminDataDict["companyCode"] as? String ?? "Unknown Company Code"
+            adminData.fullName = data["fullName"] as? String ?? "Unknown Admin"
+            adminData.companyCode = data["companyCode"] as? String ?? "Unknown Company Code"
             
-            print("Admin Name: \(adminData.fullName)")
-            print("Admin company code: \(adminData.companyCode)")
-        } catch {
-            print("Error fetching admin data: \(error.localizedDescription)")
+            completion(true, nil)
         }
     }
     
@@ -265,6 +256,27 @@ import FirebaseAuth
             } withCancel: { error in
                 completion(false, "Error validating company code: \(error.localizedDescription)")
             }
+    }
+    
+    
+    func loadEmployees(for companyCode: String, completion: @escaping ([EmployeeData]?, Error?) -> Void) {
+        let ref = Database.database().reference()
+        
+        ref.child("users").observeSingleEvent(of: .value) { snapshot in
+            guard let usersDict = snapshot.value as? [String: [String: Any]] else {
+                completion(nil, NSError(domain: "", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to fetch users"]))
+                return
+            }
+            
+            // Filtrera ut anställda som tillhör samma companyCode
+            let employees = usersDict.compactMap { (key, value) -> EmployeeData? in
+                guard let userCompanyCode = value["companyCode"] as? String,
+                      userCompanyCode == companyCode else { return nil }
+                return EmployeeData(id: key, data: value)
+            }
+            
+            completion(employees, nil)
+        }
     }
 
 }

@@ -15,6 +15,9 @@ struct EmployerView: View {
     @StateObject private var adminData = AdminData()
     @State var punchsyncfb = PunchSyncFB()
     
+    @State private var employees: [EmployeeData] = []
+    @State private var isLoading = true
+    
     var body: some View {
         
         HStack {
@@ -32,8 +35,25 @@ struct EmployerView: View {
             }
             .padding()
             .task {
-                // Load admin data when the view appears
-                await punchsyncfb.loadAdminData(adminData: adminData)
+                punchsyncfb.loadAdminData(adminData: adminData) { success, error in
+                    if success {
+                        print("Admin data loaded successfully")
+                        
+                        punchsyncfb.loadEmployees(for: adminData.companyCode) { loadedEmployees, error in
+                            if let loadedEmployees = loadedEmployees {
+                                DispatchQueue.main.async {
+                                    self.employees = loadedEmployees
+                                    self.isLoading = false
+                                }
+                                print("Employees loaded: \(loadedEmployees)")
+                            } else if let error = error {
+                                print("Error loading employees: \(error.localizedDescription)")
+                            }
+                        }
+                    } else if let error = error {
+                        print("Error loading admin data: \(error.localizedDescription)")
+                    }
+                }
             }
             
             Spacer()
@@ -45,9 +65,35 @@ struct EmployerView: View {
         
         VStack {
             TextFieldView(placeholder: "Search employees", text: $searchField, isSecure: false, systemName: "magnifyingglass")
-            Spacer()
         }
         .padding(.top, 20)
+        
+        VStack {
+            if isLoading {
+                ProgressView("Loading employees..")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                List {
+                    ForEach(employees) { employee in
+                        HStack() {
+                            Text(employee.fullName)
+                            Spacer()
+                            Text(employee.isAdmin ? "Admin" : "Employee")
+                                .foregroundStyle(employee.isAdmin ? Color.red : Color.blue)
+                        }
+                    }
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color(hex: "ECE9D4"))
+                    )
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 0))
+                }
+                .scrollContentBackground(.hidden)
+            }
+        }
+        .frame(maxHeight: .infinity)
     }
 }
 
