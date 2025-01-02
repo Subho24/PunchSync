@@ -20,12 +20,15 @@ struct AddAdminView: View {
     @State var email = ""
     @State var password = ""
     @State var confirmPassword = ""
+    @State var addedAdminName: String = ""
     
     @State var errorMessage = ""
     
     @State var admin: Bool = true
     
     @State var showAlert = false
+    
+    @State private var currentAdminPassword: String = ""
     
     var body: some View {
         
@@ -51,6 +54,8 @@ struct AddAdminView: View {
             
             TextFieldView(placeholder: "Confirm Password", text: $confirmPassword, isSecure: true, systemName: "lock", onChange: { errorMessage = ""})
             
+            TextFieldView(placeholder: "Your own password", text: $currentAdminPassword, isSecure: true , systemName: "lock", onChange: { errorMessage = ""})
+            
             ErrorMessageView(errorMessage: errorMessage)
             
             VStack {
@@ -64,12 +69,13 @@ struct AddAdminView: View {
                     if let validationError = ValidationUtils.validateRegisterInputs(fullName: fullName, email: email, password: password, confirmPassword: confirmPassword, companyCode: yourcompanyID) {
                         errorMessage = validationError
                     } else {
-                        punchsyncfb.createNewAdmin(email: email, password: password, fullName: fullName, yourcompanyID: yourcompanyID, currentAdmin: currentAdmin) { firebaseError in
+                        punchsyncfb.createNewAdmin(email: email, password: password, fullName: fullName, yourcompanyID: yourcompanyID, currentAdmin: currentAdmin,  adminPassword: currentAdminPassword) { firebaseError in
                             if let error = firebaseError {
                                 errorMessage = error
                             } else {
                                 errorMessage = ""
                                 showAlert = true
+                                addedAdminName = fullName
                                 // Clear form fields only on success
                                 email = ""
                                 password = ""
@@ -92,7 +98,7 @@ struct AddAdminView: View {
                     dismiss()
                 }
             } message: {
-                Text("\(fullName) has been added as an admin.")
+                Text("\(addedAdminName) has been added as an admin.")
             }
             .padding(.vertical, 10)
         }
