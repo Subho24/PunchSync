@@ -47,36 +47,71 @@ import FirebaseAuth
         }
     }
     
-    func saveCompanyData(companyName: String, orgNumber: String, completion: @escaping (Bool, String?) -> Void) {
-        var ref: DatabaseReference!
+    func saveOrDeleteCompanyData(
+        companyName: String? = nil,
+        orgNumber: String,
+        delete: Bool = false,
+        completion: @escaping (Bool, String?) -> Void
+    ) {
+        let ref = Database.database().reference()
         
-        ref = Database.database().reference()
-        
-        func generateCompanyCode() -> String {
-            let characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-            return String((0..<10).map { _ in characters.randomElement()! })
-        }
-        
-        // First check if the organization number exists
-        ref.child("companies").child(orgNumber).observeSingleEvent(of: .value) { snapshot in
-            if snapshot.exists() {
-                completion(false, "This organization number is already registered.") // Company exists, return false
-            } else {
-                // Organization number doesn't exist, safe to save
-                let newCompanyCode = generateCompanyCode()
-                self.companyCode = newCompanyCode
-                
-                let companyData: [String: Any] = [
-                    "companyName": companyName,
-                    "organizationNumber": orgNumber,
-                    "companyCode": newCompanyCode
-                ]
-                
-                ref.child("companies").child(orgNumber).setValue(companyData)
-                completion(true, nil) // Successfully saved, return true
+        if delete {
+            // Om flaggan för borttagning är sann, radera företaget
+            ref.child("companies").child(orgNumber).removeValue { error, _ in
+                if let error = error {
+                    completion(false, "Failed to delete company data: \(error.localizedDescription)")
+                } else {
+                    completion(true, nil) // Lyckades radera
+                }
+            }
+        } else {
+            // Om det är en sparningsoperation, kontrollera först om orgNumber redan finns
+            ref.child("companies").child(orgNumber).observeSingleEvent(of: .value) { [self] snapshot in
+                if snapshot.exists() {
+                    completion(false, "This organization number is already registered.") // Företaget existerar
+                } else {
+                    // Generera companyCode och spara företaget
+                    let newCompanyCode = generateCompanyCode()
+                    self.companyCode = newCompanyCode
+                    
+                    let companyData: [String: Any] = [
+                        "companyName": companyName ?? "",
+                        "organizationNumber": orgNumber,
+                        "companyCode": newCompanyCode
+                    ]
+                    
+                    ref.child("companies").child(orgNumber).setValue(companyData) { error, _ in
+                        if let error = error {
+                            completion(false, "Failed to save company data: \(error.localizedDescription)")
+                        } else {
+                            completion(true, nil) // Lyckades spara
+                        }
+                    }
+                }
             }
         }
     }
+
+    private func generateCompanyCode() -> String {
+        let characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        return String((0..<10).map { _ in characters.randomElement()! })
+    }
+
+    
+    func deleteCompanyData(orgNumber: String, completion: @escaping (Bool, String?) -> Void) {
+        let ref = Database.database().reference()
+        
+        // Remove from database
+        ref.child("companies").child(orgNumber).removeValue { error, _ in
+            if let error = error {
+                completion(false, "Failed to delete company data: \(error.localizedDescription)")
+                return
+            }
+            
+            completion(true, nil) // Successfully deleted
+        }
+    }
+
     
     func saveAdminData(fullName: String, email: String, yourcompanyID: String) {
         var ref: DatabaseReference!
