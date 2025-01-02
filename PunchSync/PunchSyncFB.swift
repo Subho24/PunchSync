@@ -201,12 +201,10 @@ import FirebaseAuth
         }
     }
     
-    func createNewAdmin(email: String, password: String, fullName: String, yourcompanyID: String,currentAdmin: User, completion: @escaping (String?) -> Void
-    ) {
-        // Current admin UID is non-optional in User object
+    func createNewAdmin(email: String, password: String, fullName: String, yourcompanyID: String, currentAdmin: User, adminPassword: String, completion: @escaping (String?) -> Void) {
         let currentAdminUID = currentAdmin.uid
+        let currentAdminEmail = currentAdmin.email ?? ""
         
-        // First, verify the current user is actually an admin
         let databaseRef = Database.database().reference()
         databaseRef.child("users").child(currentAdminUID).observeSingleEvent(of: .value) { snapshot in
             guard let userData = snapshot.value as? [String: Any],
@@ -216,7 +214,10 @@ import FirebaseAuth
                 return
             }
             
-            // Create new admin account using Admin SDK
+            // Store current admin's credentials
+            let originalAdminEmail = Auth.auth().currentUser?.email ?? ""
+            
+            // Create new admin
             Auth.auth().createUser(withEmail: email, password: password) { authResult, error in
                 if let error = error {
                     print("Error creating user: \(error.localizedDescription)")
@@ -229,27 +230,39 @@ import FirebaseAuth
                     return
                 }
                 
-                // Add the new admin details to Realtime Database
                 let userDetails: [String: Any] = [
                     "fullName": fullName,
                     "email": email,
                     "companyCode": yourcompanyID,
                     "admin": true,
                     "createdBy": currentAdminUID,
+                    "createdAt": ServerValue.timestamp()
                 ]
                 
                 databaseRef.child("users").child(newUser.uid).setValue(userDetails) { error, _ in
                     if let error = error {
                         print("Error adding user to database: \(error.localizedDescription)")
                         completion(error.localizedDescription)
-                    } else {
-                        print("New admin added to Realtime Database successfully!")
-                        completion(nil)
+                        return
+                    }
+                    
+                    print("New admin added to Realtime Database successfully!")
+                    
+                    // Now sign back in as the original admin
+                    Auth.auth().signIn(withEmail: originalAdminEmail, password: adminPassword) { authResult, error in
+                        if let error = error {
+                            print("Error signing back in as original admin: \(error.localizedDescription)")
+                            completion("New admin created but failed to restore original admin session. Please sign out and back in.")
+                        } else {
+                            print("Successfully restored original admin session")
+                            completion(nil)
+                        }
                     }
                 }
             }
         }
     }
+
     
     func loadAdminData(adminData: AdminData, completion: @escaping (Bool, Error?) -> Void) {
         let ref = Database.database().reference()
