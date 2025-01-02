@@ -66,6 +66,13 @@ struct AddAdminView: View {
                         errorMessage = "No admin is currently logged in"
                         return
                     }
+                    
+                    // Validate admin password
+                    guard !currentAdminPassword.isEmpty else {
+                        errorMessage = "Please enter your admin password"
+                        return
+                    }
+                    
                     if let validationError = ValidationUtils.validateRegisterInputs(fullName: fullName, email: email, password: password, confirmPassword: confirmPassword, companyCode: yourcompanyID) {
                         errorMessage = validationError
                     } else {
@@ -81,6 +88,7 @@ struct AddAdminView: View {
                                 password = ""
                                 confirmPassword = ""
                                 fullName = ""
+                                currentAdminPassword = ""
                             }
                         }
                     }
