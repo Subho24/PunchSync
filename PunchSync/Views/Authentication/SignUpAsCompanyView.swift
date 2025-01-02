@@ -11,6 +11,8 @@ import Firebase
 struct SignUpAsCompanyView: View {
     
     @State var punchsyncfb = PunchSyncFB()
+    @State var navigateToHome = false
+    @State private var isCompanyRegistered: Bool = false
     
     // Company registration states
     @State var companyName = ""
@@ -79,10 +81,11 @@ struct SignUpAsCompanyView: View {
                                 if let validationError = ValidationUtils.validatesignUpAsCompany(companyName: companyName, orgNumber: orgNumber) {
                                     errorMessage = validationError
                                 } else {
-                                    punchsyncfb.saveCompanyData(companyName: companyName, orgNumber: orgNumber) { success, error in
+                                    punchsyncfb.saveOrDeleteCompanyData(companyName: companyName, orgNumber: orgNumber, delete: false) { success, error in
                                         if let error = error {
                                             self.errorMessage = error
                                         } else if success {
+                                            isCompanyRegistered = true
                                             withAnimation {
                                                 showNext = true
                                                 companyFormDisabled = true
@@ -157,6 +160,31 @@ struct SignUpAsCompanyView: View {
                     }
                 }
                 .padding(.top, 50)
+                .navigationBarBackButtonHidden(true)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button(action: {
+                            if isCompanyRegistered {
+                                punchsyncfb.saveOrDeleteCompanyData(
+                                    orgNumber: orgNumber,
+                                    delete: true
+                                ) { success, message in
+                                    if success {
+                                        print("Company deleted successfully!")
+                                    } else {
+                                        print(message ?? "Unknown error")
+                                    }
+                                }
+                            }
+                            navigateToHome = true
+                        }) {
+                            Text("< Back")
+                        }
+                        .navigationDestination(isPresented: $navigateToHome) {
+                            UnloggedView()
+                        }
+                    }
+                }
             }
         }
     }
