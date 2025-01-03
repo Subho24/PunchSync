@@ -20,21 +20,6 @@ struct CompanyView: View {
     var body: some View {
         NavigationView {
                     VStack {
-                        // Butoni "Back"
-                        HStack {
-                            Button(action: {
-                                presentationMode.wrappedValue.dismiss() // Kthehet mbrapa
-                            }) {
-                                HStack {
-                                    Image(systemName: "arrow.left")
-                                        .foregroundColor(.blue)
-                                    Text("Back")
-                                        .foregroundColor(.blue)
-                                }
-                            }
-                            Spacer()
-                        }
-                        .padding()
                         
                         // Tabela për të dhënat e kompanisë
                         Form {
