@@ -214,7 +214,7 @@ import FirebaseAuth
         }
     }
     
-    func createNewAdmin(email: String, password: String, fullName: String, yourcompanyID: String, currentAdmin: User, adminPassword: String, completion: @escaping (String?) -> Void) {
+    func createNewAdmin(email: String, password: String, fullName: String, personalNumber: String, yourcompanyID: String, currentAdmin: User, adminPassword: String, completion: @escaping (String?) -> Void) {
         let currentAdminUID = currentAdmin.uid
         let currentAdminEmail = currentAdmin.email ?? ""
         
@@ -228,66 +228,76 @@ import FirebaseAuth
                 return
             }
             
-            // Password verified, proceed with creating new admin
             let databaseRef = Database.database().reference()
-            databaseRef.child("users").child(currentAdminUID).observeSingleEvent(of: .value) { snapshot in
-                guard let userData = snapshot.value as? [String: Any],
-                      let isAdmin = userData["admin"] as? Bool,
-                      isAdmin else {
-                    completion("Current user is not authorized to create admins")
+            
+            // Query users by personal number
+            databaseRef.child("users").queryOrdered(byChild: "personalSecurityNumber").queryEqual(toValue: personalNumber).observeSingleEvent(of: .value) { snapshot, _ in
+                if snapshot.exists() && snapshot.childrenCount > 0 {
+                    completion("Personal number already registered")
                     return
                 }
                 
-                // Store current admin's credentials
-                let originalAdminEmail = Auth.auth().currentUser?.email ?? ""
-                
-                // Create new admin
-                Auth.auth().createUser(withEmail: email, password: password) { authResult, error in
-                    if let error = error {
-                        print("Error creating user: \(error.localizedDescription)")
-                        completion(error.localizedDescription)
+                // Password verified, proceed with creating new admin
+                databaseRef.child("users").child(currentAdminUID).observeSingleEvent(of: .value) { snapshot in
+                    guard let userData = snapshot.value as? [String: Any],
+                          let isAdmin = userData["admin"] as? Bool,
+                          isAdmin else {
+                        completion("Current user is not authorized to create admins")
                         return
                     }
                     
-                    guard let newUser = authResult?.user else {
-                        completion("User creation failed")
-                        return
-                    }
+                    // Store current admin's credentials
+                    let originalAdminEmail = Auth.auth().currentUser?.email ?? ""
                     
-                    let userDetails: [String: Any] = [
-                        "fullName": fullName,
-                        "email": email,
-                        "companyCode": yourcompanyID,
-                        "admin": true,
-                        "createdBy": currentAdminUID,
-                        "createdAt": ServerValue.timestamp()
-                    ]
-                    
-                    databaseRef.child("users").child(newUser.uid).setValue(userDetails) { error, _ in
+                    // Create new admin
+                    Auth.auth().createUser(withEmail: email, password: password) { authResult, error in
                         if let error = error {
-                            print("Error adding user to database: \(error.localizedDescription)")
-                            
-                            // If database update fails, delete the created auth user
-                            newUser.delete { error in
-                                if let error = error {
-                                    print("Error deleting auth user after database failure: \(error.localizedDescription)")
-                                }
-                            }
-                            
+                            print("Error creating user: \(error.localizedDescription)")
                             completion(error.localizedDescription)
                             return
                         }
                         
-                        print("New admin added to Realtime Database successfully!")
+                        guard let newUser = authResult?.user else {
+                            completion("User creation failed")
+                            return
+                        }
                         
-                        // Now sign back in as the original admin
-                        Auth.auth().signIn(withEmail: originalAdminEmail, password: adminPassword) { authResult, error in
+                        let userDetails: [String: Any] = [
+                            "fullName": fullName,
+                            "personalSecurityNumber": personalNumber,
+                            "email": email,
+                            "companyCode": yourcompanyID,
+                            "admin": true,
+                            "createdBy": currentAdminUID,
+                            "createdAt": ServerValue.timestamp()
+                        ]
+                        
+                        databaseRef.child("users").child(newUser.uid).setValue(userDetails) { error, _ in
                             if let error = error {
-                                print("Error signing back in as original admin: \(error.localizedDescription)")
-                                completion("New admin created but failed to restore original admin session. Please sign out and back in.")
-                            } else {
-                                print("Successfully restored original admin session")
-                                completion(nil)
+                                print("Error adding user to database: \(error.localizedDescription)")
+                                
+                                // If database update fails, delete the created auth user
+                                newUser.delete { error in
+                                    if let error = error {
+                                        print("Error deleting auth user after database failure: \(error.localizedDescription)")
+                                    }
+                                }
+                                
+                                completion(error.localizedDescription)
+                                return
+                            }
+                            
+                            print("New admin added to Realtime Database successfully!")
+                            
+                            // Now sign back in as the original admin
+                            Auth.auth().signIn(withEmail: originalAdminEmail, password: adminPassword) { authResult, error in
+                                if let error = error {
+                                    print("Error signing back in as original admin: \(error.localizedDescription)")
+                                    completion("New admin created but failed to restore original admin session. Please sign out and back in.")
+                                } else {
+                                    print("Successfully restored original admin session")
+                                    completion(nil)
+                                }
                             }
                         }
                     }

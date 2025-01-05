@@ -17,6 +17,7 @@ struct AddAdminView: View {
     
     @State var yourcompanyID = ""
     @State var fullName = ""
+    @State var personalNumber = ""
     @State var email = ""
     @State var password = ""
     @State var confirmPassword = ""
@@ -123,6 +124,11 @@ struct AddAdminView: View {
                         
                         TextFieldView(placeholder: "Full Name", text: $fullName, isSecure: false, systemName: "person", onChange: { errorMessage = ""})
                         
+                        TextFieldView(placeholder: "Personal Number (12 numbers)", text: $personalNumber, isSecure: false, systemName: "lock", onChange: {
+                            personalNumber = ValidationUtils.formatPersonalNumber(personalNumber);
+                            errorMessage = ""
+                        })
+
                         TextFieldView(placeholder: "Email", text: $email, isSecure: false, systemName: "envelope", onChange: { errorMessage = ""})
                         
                         TextFieldView(placeholder: "Password", text: $password, isSecure: true, systemName: "lock", onChange: { errorMessage = ""})
@@ -149,7 +155,7 @@ struct AddAdminView: View {
                                 if let validationError = ValidationUtils.validateRegisterInputs(fullName: fullName, email: email, password: password, confirmPassword: confirmPassword, companyCode: yourcompanyID) {
                                     errorMessage = validationError
                                 } else {
-                                    punchsyncfb.createNewAdmin(email: email, password: password, fullName: fullName, yourcompanyID: yourcompanyID, currentAdmin: currentAdmin,  adminPassword: currentAdminPassword) { firebaseError in
+                                    punchsyncfb.createNewAdmin(email: email, password: password, fullName: fullName, personalNumber: personalNumber, yourcompanyID: yourcompanyID, currentAdmin: currentAdmin,  adminPassword: currentAdminPassword) { firebaseError in
                                         if let error = firebaseError {
                                             errorMessage = error
                                         } else {
@@ -161,6 +167,7 @@ struct AddAdminView: View {
                                             password = ""
                                             confirmPassword = ""
                                             fullName = ""
+                                            personalNumber = ""
                                             currentAdminPassword = ""
                                         }
                                     }
@@ -171,11 +178,6 @@ struct AddAdminView: View {
                         }
                         .alert("New Admin Created", isPresented: $showAlert) {
                             Button("OK", role: .cancel) {
-                                // Optional: Clear the form fields after successful creation
-                                email = ""
-                                password = ""
-                                confirmPassword = ""
-                                fullName = ""
                                 dismiss()
                             }
                         } message: {
