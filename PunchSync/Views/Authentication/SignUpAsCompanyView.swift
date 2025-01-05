@@ -23,6 +23,7 @@ struct SignUpAsCompanyView: View {
     @State private var companyCode: String = ""
     @State var yourcompanyID = ""
     @State var fullName = ""
+    @State var personalNumber = ""
     @State var email = ""
     @State var password = ""
     @State var confirmPassword = ""
@@ -126,6 +127,12 @@ struct SignUpAsCompanyView: View {
                             
                             TextFieldView(placeholder: "Full Name", text: $fullName, isSecure: false, systemName: "person")
                             
+                            TextFieldView(placeholder: "Personal Number (12 numbers)", text: $personalNumber, isSecure: false, systemName: "lock", onChange: {
+                                personalNumber = ValidationUtils.formatPersonalNumber(personalNumber);
+                                errorMessage = ""
+                            })
+
+                            
                             TextFieldView(placeholder: "Email", text: $email, isSecure: false, systemName: "envelope")
                             
                             TextFieldView(placeholder: "Password", text: $password, isSecure: true, systemName: "lock")
@@ -136,10 +143,10 @@ struct SignUpAsCompanyView: View {
                             
                             VStack {
                                 Button(action: {
-                                    if let validationError = ValidationUtils.validateRegisterInputs(fullName: fullName, email: email, password: password, confirmPassword: confirmPassword, companyCode: yourcompanyID) {
+                                    if let validationError = ValidationUtils.validateRegisterInputs(fullName: fullName, email: email, password: password, confirmPassword: confirmPassword, companyCode: yourcompanyID, personalNumber: personalNumber) {
                                         errorMessage = validationError
                                     } else {
-                                        punchsyncfb.createProfile(email: email, password: password, fullName: fullName, yourcompanyID: yourcompanyID) { firebaseError in
+                                        punchsyncfb.createProfile(email: email, password: password, fullName: fullName, personalNumber: personalNumber, yourcompanyID: yourcompanyID) { firebaseError in
                                             errorMessage = firebaseError ?? "" // Default to empty string if no Firebase error
                                         }
                                     }

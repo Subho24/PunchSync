@@ -166,36 +166,49 @@ import FirebaseAuth
         
     }
     
-    func createProfile(email: String, password: String, fullName: String, yourcompanyID: String, completion: @escaping (String?) -> Void) {
-        // Step 1: Create the new user in Firebase Authentication
-        Auth.auth().createUser(withEmail: email, password: password) { authResult, error in
-            if let error = error {
-                print("Error creating user: \(error.localizedDescription)")
-                completion(error.localizedDescription)
+    func createProfile(email: String, password: String, fullName: String, personalNumber: String, yourcompanyID: String, completion: @escaping (String?) -> Void) {
+        // Step 1: Check if personal number already exists anywhere in the database
+        let databaseRef = Database.database().reference()
+        
+        // Query users by personal number
+        databaseRef.child("users").queryOrdered(byChild: "personalSecurityNumber").queryEqual(toValue: personalNumber).observeSingleEvent(of: .value) { snapshot, _ in
+            if snapshot.exists() && snapshot.childrenCount > 0 {
+                completion("Personal number already registered")
                 return
             }
-            guard let user = authResult?.user else {
-                print("User creation failed.")
-                completion("User creation failed.")
-                return
-            }
-            print("User created with UID: \(user.uid)")
             
-            // Step 2: Add the new user's details to Realtime Database
-            let databaseRef = Database.database().reference()
-            let userDetails: [String: Any] = [
-                "fullName": fullName,
-                "email": email,
-                "companyCode": yourcompanyID,
-                "admin": true
-            ]
-            databaseRef.child("users").child(user.uid).setValue(userDetails) { error, _ in
+            // Step 2: If personal number is unique, create the new user
+            Auth.auth().createUser(withEmail: email, password: password) { authResult, error in
                 if let error = error {
-                    print("Error adding user to database: \(error.localizedDescription)")
+                    print("Error creating user: \(error.localizedDescription)")
                     completion(error.localizedDescription)
-                } else {
-                    print("User added to Realtime Database successfully!")
-                    completion(nil)
+                    return
+                }
+                
+                guard let user = authResult?.user else {
+                    print("User creation failed.")
+                    completion("User creation failed.")
+                    return
+                }
+                print("User created with UID: \(user.uid)")
+                
+                // Step 3: Add the new user's details to Realtime Database
+                let userDetails: [String: Any] = [
+                    "fullName": fullName,
+                    "personalSecurityNumber": personalNumber,
+                    "email": email,
+                    "companyCode": yourcompanyID,
+                    "admin": true
+                ]
+                
+                databaseRef.child("users").child(user.uid).setValue(userDetails) { error, _ in
+                    if let error = error {
+                        print("Error adding user to database: \(error.localizedDescription)")
+                        completion(error.localizedDescription)
+                    } else {
+                        print("User added to Realtime Database successfully!")
+                        completion(nil)
+                    }
                 }
             }
         }
