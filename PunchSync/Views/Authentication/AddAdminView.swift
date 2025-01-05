@@ -42,11 +42,13 @@ struct AddAdminView: View {
         ScrollView {
             VStack {
                 
+                Spacer()
+                
                 VStack {
                     
                     Image("Icon")
                         .resizable()
-                        .frame(width: 120, height: 120)
+                        .frame(width: 180, height: 180)
                         .padding(.leading, 25)
                         .padding(.bottom, showAdminForm ? 50 : 30)
                     
@@ -103,6 +105,10 @@ struct AddAdminView: View {
                         }
                     }
                 }
+                .frame(maxWidth: .infinity)
+                .padding(.top, showAdminForm ? 0 : 100)
+                
+                Spacer()
                 
                 
                 if showAdminForm {
