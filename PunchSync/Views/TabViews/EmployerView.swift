@@ -18,6 +18,10 @@ struct EmployerView: View {
     @State private var employees: [EmployeeData] = []
     @State private var isLoading = true
     
+    @State var searchText = ""
+    @State private var searchResults: [EmployeeData] = []
+
+    
     var body: some View {
         NavigationStack {
             HStack {
@@ -43,6 +47,7 @@ struct EmployerView: View {
                                 if let loadedEmployees = loadedEmployees {
                                     DispatchQueue.main.async {
                                         self.employees = loadedEmployees
+                                        self.searchResults = loadedEmployees
                                         self.isLoading = false
                                     }
                                     print("Employees loaded: \(loadedEmployees)")
@@ -63,8 +68,12 @@ struct EmployerView: View {
             .frame(maxWidth: .infinity)
             .background(Color(hex: "ECE9D4"))
             
+           
             VStack {
-                TextFieldView(placeholder: "Search employees", text: $searchField, isSecure: false, systemName: "magnifyingglass")
+                NavigationStack {
+                    TextFieldView(placeholder: "Search \(searchText)", text: $searchField, isSecure: false, systemName: "magnifyingglass")
+                }
+                .searchable(text: $searchText)
             }
             .padding(.top, 20)
             
@@ -74,7 +83,7 @@ struct EmployerView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     List {
-                        ForEach(employees) { employee in
+                        ForEach(searchResults, id: \.id) { employee in
                             NavigationLink(destination: EmployeeDetailView(employee: employee)) {
                                 HStack() {
                                     Text(employee.fullName)
@@ -95,7 +104,26 @@ struct EmployerView: View {
                     .scrollContentBackground(.hidden)
                 }
             }
+            .onChange(of: searchField) {
+                filterEmployees()
+            }
             .frame(maxHeight: .infinity)
+        }
+    }
+    
+    private func filterEmployees() {
+        if searchField.isEmpty {
+            searchResults = employees
+        } else {
+            searchResults = employees.filter { employee in
+                // Split the full name into words
+                let words = employee.fullName.split(separator: " ")
+                
+                // Check if any word starts with the search text (case insensitive)
+                return words.contains { word in
+                    word.lowercased().hasPrefix(searchField.lowercased())
+                }
+            }
         }
     }
 }
