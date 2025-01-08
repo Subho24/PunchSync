@@ -11,7 +11,8 @@ import FirebaseAuth
 
 @Observable class PunchSyncFB {
     
-    var companyCode: String = "" 
+    var companyCode: String = ""
+    var adminData = AdminData()
     
     func userLogin(email : String, password : String, completion: @escaping (String?) -> Void) {
         Task {
@@ -167,7 +168,8 @@ import FirebaseAuth
                         "personalSecurityNumber": personalNumber,
                         "email": email,
                         "companyCode": companyCode,
-                        "admin": false
+                        "admin": false,
+                        "pending": true
                     ]
                     
                     ref.child("users").child(personalNumber).setValue(userData)
@@ -176,7 +178,64 @@ import FirebaseAuth
                 
             }
         }
+    }
+    
+    // Function to get pending users for a specific company
+    func getPendingUsers(companyCode: String, completion: @escaping ([String: Any]?, String?) -> Void) {
+        let ref = Database.database().reference()
         
+        ref.child("users")
+            .queryOrdered(byChild: "companyCode")
+            .queryEqual(toValue: companyCode)
+            .observeSingleEvent(of: .value) { snapshot in
+                print("Snapshot data: \(snapshot.value ?? "No data")")
+                var pendingUsers: [String: Any] = [:]
+                
+                for child in snapshot.children {
+                    guard let snapshot = child as? DataSnapshot,
+                          let userData = snapshot.value as? [String: Any],
+                          let pending = userData["pending"] as? Bool,
+                          pending == true else {
+                        continue
+                    }
+                    
+                    pendingUsers[snapshot.key] = userData
+                }
+                
+                completion(pendingUsers, nil)
+        }
+    }
+    
+    func verifyUser(personalNumber: String, approved: Bool, completion: @escaping (Bool, String?) -> Void) {
+        let ref = Database.database().reference()
+        
+        ref.child("users").child(personalNumber).observeSingleEvent(of: .value) { snapshot in
+            guard snapshot.exists(),
+                  let userData = snapshot.value as? [String: Any],
+                  let pending = userData["pending"] as? Bool,
+                  pending == true else {
+                completion(false, "User not found or already verified")
+                return
+            }
+            
+            if approved {
+                ref.child("users").child(personalNumber).child("pending").setValue(false) { error, _ in
+                    if let error = error {
+                        completion(false, error.localizedDescription)
+                    } else {
+                        completion(true, nil)
+                    }
+                }
+            } else {
+                ref.child("users").child(personalNumber).removeValue { error, _ in
+                    if let error = error {
+                        completion(false, error.localizedDescription)
+                    } else {
+                        completion(true, nil)
+                    }
+                }
+            }
+        }
     }
     
     func createProfile(email: String, password: String, fullName: String, personalNumber: String, yourcompanyID: String, completion: @escaping (String?) -> Void) {
