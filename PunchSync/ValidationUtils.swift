@@ -162,5 +162,14 @@ struct ValidationUtils {
         }
         return nil
     }
+    
+    static func validateReset(email: String) -> String? {
+        if !isNotEmpty(email) {
+            return "Email field cannot be empty."
+        } else if !isValidEmail(email) {
+            return "Invalid email format."
+        }
+        return nil
+    }
 }
 
