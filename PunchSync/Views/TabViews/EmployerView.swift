@@ -65,42 +65,50 @@ struct EmployerView: View {
                     ProgressView("Loading employees..")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    Section(header: Text("Pending Users")) {
-                        ForEach(Array(pendingUsers.keys), id: \.self) { personalNumber in
-                            if let userData = pendingUsers[personalNumber] as? [String: Any],
-                               let fullName = userData["fullName"] as? String {
-                                HStack {
-                                    Text(fullName)
-                                    Spacer()
-                                    Button("Verify") {
-                                        handleUserVerification(personalNumber: personalNumber, approved: true)
+                    if !pendingUsers.isEmpty {
+                        Section(header: Text("Pending Users")) {
+                            ForEach(Array(pendingUsers.keys), id: \.self) { personalNumber in
+                                if let userData = pendingUsers[personalNumber] as? [String: Any],
+                                   let fullName = userData["fullName"] as? String {
+                                    VStack {
+                                        Text(fullName)
+                                            .padding(.bottom, 20)
+                                        HStack {
+                                            Button("Verify") {
+                                                handleUserVerification(personalNumber: personalNumber, approved: true)
+                                            }
+                                            .padding(8)
+                                            .padding(.horizontal, 15)
+                                            .background(Color.green)
+                                            .cornerRadius(10)
+                                            .foregroundStyle(.white)
+                                            
+                                            Button("Deny") {
+                                                handleUserVerification(personalNumber: personalNumber, approved: false)
+                                            }
+                                            .padding(8)
+                                            .padding(.horizontal, 15)
+                                            .background(Color.red)
+                                            .cornerRadius(10)
+                                            .foregroundStyle(.white)
+                                        }
                                     }
-                                    .padding(10)
-                                    .background(Color.green)
-                                    .cornerRadius(10)
-                                    .foregroundStyle(.white)
-                                    
-                                    Button("Deny") {
-                                        handleUserVerification(personalNumber: personalNumber, approved: false)
-                                    }
-                                    .padding(10)
-                                    .background(Color.red)
-                                    .cornerRadius(10)
-                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 25)
+                                    .padding(.top, 20)
                                 }
-                                .padding(.horizontal, 25)
-                                .padding(.top, 20)
                             }
                         }
                     }
                     List {
                         ForEach(searchResults, id: \.id) { employee in
-                            NavigationLink(destination: EmployeeDetailView(employee: employee)) {
-                                HStack() {
-                                    Text(employee.fullName)
-                                    Spacer()
-                                    Text(employee.isAdmin ? "Admin" : "Employee")
-                                        .foregroundStyle(employee.isAdmin ? Color.red : Color.blue)
+                            if !employee.pending {
+                                NavigationLink(destination: EmployeeDetailView(employee: employee)) {
+                                    HStack() {
+                                        Text(employee.fullName)
+                                        Spacer()
+                                        Text(employee.isAdmin ? "Admin" : "Employee")
+                                            .foregroundStyle(employee.isAdmin ? Color.red : Color.blue)
+                                    }
                                 }
                             }
                         }
