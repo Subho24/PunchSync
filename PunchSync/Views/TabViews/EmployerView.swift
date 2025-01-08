@@ -20,6 +20,8 @@ struct EmployerView: View {
     
     @State var searchText = ""
     @State private var searchResults: [EmployeeData] = []
+    @State private var pendingUsers: [String: Any] = [:]
+    @State var approved: Bool = false
 
     
     var body: some View {
@@ -39,26 +41,7 @@ struct EmployerView: View {
                 }
                 .padding()
                 .task {
-                    punchsyncfb.loadAdminData(adminData: adminData) { success, error in
-                        if success {
-                            print("Admin data loaded successfully")
-                            
-                            punchsyncfb.loadEmployees(for: adminData.companyCode) { loadedEmployees, error in
-                                if let loadedEmployees = loadedEmployees {
-                                    DispatchQueue.main.async {
-                                        self.employees = loadedEmployees
-                                        self.searchResults = loadedEmployees
-                                        self.isLoading = false
-                                    }
-                                    print("Employees loaded: \(loadedEmployees)")
-                                } else if let error = error {
-                                    print("Error loading employees: \(error.localizedDescription)")
-                                }
-                            }
-                        } else if let error = error {
-                            print("Error loading admin data: \(error.localizedDescription)")
-                        }
-                    }
+                    await loadAllData()
                 }
                 
                 Spacer()
@@ -82,6 +65,34 @@ struct EmployerView: View {
                     ProgressView("Loading employees..")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
+                    Section(header: Text("Pending Users")) {
+                        ForEach(Array(pendingUsers.keys), id: \.self) { personalNumber in
+                            if let userData = pendingUsers[personalNumber] as? [String: Any],
+                               let fullName = userData["fullName"] as? String {
+                                HStack {
+                                    Text(fullName)
+                                    Spacer()
+                                    Button("Verify") {
+                                        handleUserVerification(personalNumber: personalNumber, approved: true)
+                                    }
+                                    .padding(10)
+                                    .background(Color.green)
+                                    .cornerRadius(10)
+                                    .foregroundStyle(.white)
+                                    
+                                    Button("Deny") {
+                                        handleUserVerification(personalNumber: personalNumber, approved: false)
+                                    }
+                                    .padding(10)
+                                    .background(Color.red)
+                                    .cornerRadius(10)
+                                    .foregroundStyle(.white)
+                                }
+                                .padding(.horizontal, 25)
+                                .padding(.top, 20)
+                            }
+                        }
+                    }
                     List {
                         ForEach(searchResults, id: \.id) { employee in
                             NavigationLink(destination: EmployeeDetailView(employee: employee)) {
@@ -108,6 +119,54 @@ struct EmployerView: View {
                 filterEmployees()
             }
             .frame(maxHeight: .infinity)
+        }
+    }
+    
+    private func loadAllData() async {
+        // Load admin data first
+        await withCheckedContinuation { continuation in
+            punchsyncfb.loadAdminData(adminData: adminData) { success, error in
+                if success {
+                    // After admin data is loaded, load employees
+                    punchsyncfb.loadEmployees(for: adminData.companyCode) { loadedEmployees, error in
+                        if let loadedEmployees = loadedEmployees {
+                            DispatchQueue.main.async {
+                                self.employees = loadedEmployees
+                                self.searchResults = loadedEmployees
+                            }
+                            
+                            // After employees are loaded, load pending users
+                            punchsyncfb.getPendingUsers(companyCode: adminData.companyCode) { users, error in
+                                if let pendingUsers = users {
+                                    DispatchQueue.main.async {
+                                        self.pendingUsers = pendingUsers
+                                        self.isLoading = false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                continuation.resume()
+            }
+        }
+    }
+    
+    private func handleUserVerification(personalNumber: String, approved: Bool) {
+        punchsyncfb.verifyUser(personalNumber: personalNumber, approved: approved) { success, error in
+            if success {
+                DispatchQueue.main.async {
+                    pendingUsers.removeValue(forKey: personalNumber)
+                    if approved {
+                        punchsyncfb.loadEmployees(for: adminData.companyCode) { loadedEmployees, error in
+                            if let loadedEmployees = loadedEmployees {
+                                self.employees = loadedEmployees
+                                self.searchResults = loadedEmployees
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
     
