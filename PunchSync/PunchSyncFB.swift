@@ -47,6 +47,19 @@ import FirebaseAuth
         }
     }
     
+    func forgotPassword(email : String, completion: @escaping (String?) -> Void) {
+       Task {
+           do {
+               try await Auth.auth().sendPasswordReset(withEmail: email)
+               print("Sent!")
+               completion(nil)
+           } catch {
+               print("Reset failed: \(error.localizedDescription)")
+               completion(error.localizedDescription)
+           }
+       }
+   }
+    
     func saveOrDeleteCompanyData(
         companyName: String? = nil,
         orgNumber: String,
