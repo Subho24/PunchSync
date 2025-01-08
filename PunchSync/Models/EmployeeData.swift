@@ -14,6 +14,7 @@ struct EmployeeData: Identifiable {
     let personalNumber: String
     let companyCode: String
     let isAdmin: Bool
+    let pending: Bool
     
     init(id: String, data: [String: Any]) {
         self.id = id
@@ -22,5 +23,6 @@ struct EmployeeData: Identifiable {
         self.personalNumber = data["personalSecurityNumber"] as? String ?? ""
         self.companyCode = data["companyCode"] as? String ?? ""
         self.isAdmin = data["admin"] as? Bool ?? false
+        self.pending = data["pending"] as? Bool ?? false
     }
 }
