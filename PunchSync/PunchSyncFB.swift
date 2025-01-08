@@ -110,37 +110,6 @@ import FirebaseAuth
         let characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
         return String((0..<10).map { _ in characters.randomElement()! })
     }
-
-    
-    func deleteCompanyData(orgNumber: String, completion: @escaping (Bool, String?) -> Void) {
-        let ref = Database.database().reference()
-        
-        // Remove from database
-        ref.child("companies").child(orgNumber).removeValue { error, _ in
-            if let error = error {
-                completion(false, "Failed to delete company data: \(error.localizedDescription)")
-                return
-            }
-            
-            completion(true, nil) // Successfully deleted
-        }
-    }
-
-    
-    func saveAdminData(fullName: String, email: String, yourcompanyID: String) {
-        var ref: DatabaseReference!
-        
-        ref = Database.database().reference()
-        
-        let userData: [String: Any] = [
-            "fullName": fullName,
-            "email": email,
-            "companyCode": yourcompanyID,
-            "admin": true
-        ]
-        
-        ref.child("users").childByAutoId().setValue(userData)
-    }
     
     func saveUserData(fullName: String, personalNumber: String, email: String, companyCode: String, completion: @escaping (Bool, String?) -> Void) {
         var ref: DatabaseReference!
