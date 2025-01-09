@@ -5,94 +5,117 @@
 //  Created by Arlinda Islami on 2024-12-20.
 //
 
+
 import SwiftUI
+import Firebase
+import FirebaseAuth
 
 struct CompanyView: View {
-    @Environment(\.presentationMode) var presentationMode
-    // Properties for displaying company data
-    @State private var companyName: String = "ABC Company AB" // Bëhet modifikues
-    let organisationNumber: String = "123456-7890"
-    let workplace: String = "Headquarters, Stockholm"
-    let connectionStatus: String = "Online"
-    let pendingEvents: Int = 5
-    let companyID: String = "COMP-001"
+    @State private var companies: [CompanyData] = [] // List of companies
+    @State private var isLoading = true // Loading state
+    @State private var errorMessage: String? = nil // Error message
+    @State var punchsyncfb = PunchSyncFB()
     
     var body: some View {
         NavigationView {
+            VStack {
+                if isLoading {
+                    ProgressView("Loading Companies...")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let errorMessage = errorMessage {
                     VStack {
-                        
-                        // Tabela për të dhënat e kompanisë
-                        Form {
-                            Section(header: Text("Company Information")) {
-                                HStack {
-                                    Text("Company Name:")
-                                        .bold()
-                                    Spacer()
-                                    // TextField për të modifikuar emrin e kompanisë
-                                    TextField("Enter Company Name", text: $companyName)
-                                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                                        .frame(maxWidth: 200) // Kufizojmë gjerësinë
-                                }
-                                
-                                HStack {
-                                    Text("Organization Number:")
-                                        .bold()
-                                    Spacer()
-                                    Text(organisationNumber)
-                                }
-                                
-                                HStack {
-                                    Text("Workplace:")
-                                        .bold()
-                                    Spacer()
-                                    Text(workplace)
-                                }
-                            }
-                            
-                            Section(header: Text("Status")) {
-                                HStack {
-                                    Text("Connection Status:")
-                                        .bold()
-                                    Spacer()
-                                    Text(connectionStatus)
-                                        .foregroundColor(connectionStatus == "Online" ? .green : .red)
-                                }
-                                
-                                HStack {
-                                    Text("Number of Events to Send:")
-                                        .bold()
-                                    Spacer()
-                                    Text("\(pendingEvents)")
-                                }
-                            }
-                            
-                            Section(header: Text("Identifiers")) {
-                                HStack {
-                                    Text("Company ID:")
-                                        .bold()
-                                    Spacer()
-                                    Text(companyID)
-                                }
+                        Text("Error: \(errorMessage)")
+                            .foregroundColor(.red)
+                            .multilineTextAlignment(.center)
+                        Button("Retry") {
+                            loadCompanies()
+                        }
+                        .padding()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
+                    }
+                } else if companies.isEmpty {
+                    Text("No companies found.")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    List {
+                        ForEach(companies) { company in
+                            HStack {
+                                Text(company.name)
+                                Spacer()
+                                Text("Code: \(company.code)")
+                                    .foregroundStyle(Color.blue)
                             }
                         }
-                
-                // Button for saving changes
-                Button(action: {
-                    // Logic for saving the changes
-                    print("Company Name Updated to: \(companyName)")
-                }) {
-                    Text("Save Changes")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
                         .padding()
-                        .foregroundColor(.white)
-                        .background(Color(hex: "FD9709")) // Stili ekzistues i butonit
-                        .cornerRadius(10)
-                        .padding(.horizontal)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color(hex: "ECE9D4"))
+                        )
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 0))
+                    }
+                    .scrollContentBackground(.hidden)
                 }
+            }
+            .onAppear {
+                loadCompanies()
             }
         }
     }
+    
+    // Function to load companies based on the company code from the logged-in user
+    func loadCompanies() {
+        isLoading = true
+        errorMessage = nil
+        
+        guard let currentUser = Auth.auth().currentUser else {
+            errorMessage = "No user is currently logged in"
+            isLoading = false
+            return
+        }
+        
+        // Load admin data to get the company code for the logged-in user
+        punchsyncfb.loadAdminData(adminData: AdminData()) { success, error in
+            if let error = error {
+                errorMessage = error.localizedDescription
+                isLoading = false
+                return
+            }
+            
+            guard success else {
+                errorMessage = "Failed to load admin data"
+                isLoading = false
+                return
+            }
+            
+            // Ensure that companyCode is valid
+            let adminCompanyCode = punchsyncfb.companyCode
+            guard !adminCompanyCode.isEmpty else {
+                errorMessage = "Admin company code is not available."
+                isLoading = false
+                return
+            }
+            
+            // Load companies using the company code
+            punchsyncfb.loadCompanies(for: adminCompanyCode) { companies, error in
+                if let error = error {
+                    errorMessage = error.localizedDescription
+                } else {
+                    self.companies = companies ?? []
+                }
+                isLoading = false
+            }
+        }
+    }
+}
+
+struct CompanyData: Identifiable {
+    let id: String
+    let name: String
+    let code: String
+    let organizationNumber: String
 }
 
 #Preview {
