@@ -149,6 +149,19 @@ import FirebaseAuth
         }
     }
     
+    func removeUser(personalNumber: String, completion: @escaping (Bool, String?) -> Void) {
+        
+        let ref = Database.database().reference()
+        
+        ref.child("users").child(personalNumber).removeValue { error, _ in
+            if let error = error {
+                completion(false, error.localizedDescription)
+            } else {
+                completion(true, nil)
+            }
+        }
+    }
+    
     // Function to get pending users for a specific company
     func getPendingUsers(companyCode: String, completion: @escaping ([String: Any]?, String?) -> Void) {
         let ref = Database.database().reference()

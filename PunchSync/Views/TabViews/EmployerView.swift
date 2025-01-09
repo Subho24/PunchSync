@@ -22,6 +22,8 @@ struct EmployerView: View {
     @State private var searchResults: [EmployeeData] = []
     @State private var pendingUsers: [String: Any] = [:]
     @State var approved: Bool = false
+    
+    @State var errorMessage = ""
 
     
     var body: some View {
@@ -112,6 +114,7 @@ struct EmployerView: View {
                                 }
                             }
                         }
+                        .onDelete(perform: handleDelete)
                         .padding()
                         .background(
                             RoundedRectangle(cornerRadius: 16)
@@ -189,6 +192,21 @@ struct EmployerView: View {
                 // Check if any word starts with the search text (case insensitive)
                 return words.contains { word in
                     word.lowercased().hasPrefix(searchField.lowercased())
+                }
+            }
+        }
+    }
+    
+    func handleDelete(at offsets: IndexSet) {
+        offsets.forEach { index in
+            let employee = searchResults[index]
+            punchsyncfb.removeUser(personalNumber: employee.personalNumber) { success, error in
+                if success {
+                    // Ta bort från lokala listan efter borttagning från databasen
+                    searchResults.remove(at: index)
+                } else if let error = error {
+                    // Hantera felmeddelandet
+                    self.errorMessage = error
                 }
             }
         }
