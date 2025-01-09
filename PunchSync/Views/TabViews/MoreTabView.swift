@@ -22,42 +22,42 @@ struct MoreTabView: View {
     
     var body: some View {
         NavigationStack {
-            VStack {
-                // Profile Section
+            ScrollView {
                 VStack {
-                    HStack(spacing: 50) {
-                        Circle()
-                            .fill(Color(hex: "ECE9D4"))
-                            .frame(width: 80, height: 80)
-                            .overlay(Circle().stroke(Color.white, lineWidth: 2))
-                            .shadow(radius: 5)
-                            .padding(.bottom, 5)
-                        
-                        VStack {
-                            Text("Admin: \(adminData.fullName)")
-                                .font(.headline)
-                            Text("Company Code: \(adminData.companyCode)")
-                        }
-                        .task {
-                            punchsyncfb.loadAdminData(adminData: adminData) { success, error in
-                                if success {
-                                    print("Admin data loaded successfully")
-                                } else if let error = error {
-                                    print("Error loading admin data: \(error.localizedDescription)")
+                    // Profile Section
+                    VStack {
+                        HStack(spacing: 50) {
+                            Circle()
+                                .fill(Color(hex: "ECE9D4"))
+                                .frame(width: 80, height: 80)
+                                .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                                .shadow(radius: 5)
+                                .padding(.bottom, 5)
+                            
+                            VStack {
+                                Text("Admin: \(adminData.fullName)")
+                                    .font(.headline)
+                                Text("Company Code: \(adminData.companyCode)")
+                            }
+                            .task {
+                                punchsyncfb.loadAdminData(adminData: adminData) { success, error in
+                                    if success {
+                                        print("Admin data loaded successfully")
+                                    } else if let error = error {
+                                        print("Error loading admin data: \(error.localizedDescription)")
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                
-                VStack(spacing: 30) {
-                    // First Row with 2 buttons
-                    HStack(spacing: 3) {
+                    .padding(.bottom, 30)
+                    
+                    VStack(spacing: 20) {
                         
                         Button(action: {
                             navigateToAdminsView = true
                         }) {
-                            ButtonMoreView(title: "Admins", icon: "person.2.fill", color: "283B34")
+                            ButtonMoreView(title: "Add new admins", icon: "person.2.fill", color: "283B34")
                         }
                         .navigationDestination(isPresented: $navigateToAdminsView) {
                             AddAdminView(yourcompanyID: adminData.companyCode)
@@ -66,20 +66,17 @@ struct MoreTabView: View {
                         Button(action: {
                             navigateToEmployerView = true
                         }) {
-                            ButtonMoreView(title: "Employer", icon: "person.crop.circle.fill.badge.checkmark", color: "FE7E65")
+                            ButtonMoreView(title: "Check your employees", icon: "person.crop.circle.fill.badge.checkmark", color: "FE7E65")
                         }
                         .navigationDestination(isPresented: $navigateToEmployerView) {
-                                EmployerView()
+                            EmployerView()
                         }
-                    }
-                    
-                    // Second Row with 2 buttons
-                    HStack(spacing: 3) {
+                        
                         
                         Button(action: {
                             navigateToAttestView = true
                         }) {
-                            ButtonMoreView(title: "Attest", icon: "checkmark.rectangle", color: "60BDCD")
+                            ButtonMoreView(title: "Make attest", icon: "checkmark.rectangle", color: "60BDCD")
                         }
                         .navigationDestination(isPresented: $navigateToAttestView) {
                             AttestView()
@@ -93,15 +90,11 @@ struct MoreTabView: View {
                         .navigationDestination(isPresented: $navigateToScheduleView) {
                             ScheduleView()
                         }
-                    }
-                    
-                    // Third Row with 2 buttons
-                    HStack(spacing: 3) {
                         
                         Button(action: {
                             navigateToCompanyView = true
                         }) {
-                            ButtonMoreView(title: "Company", icon: "building.2.fill", color: "F5C87E")
+                            ButtonMoreView(title: "Company data", icon: "building.2.fill", color: "F5C87E")
                         }
                         .navigationDestination(isPresented: $navigateToCompanyView) {
                             CompanyView()
@@ -115,11 +108,12 @@ struct MoreTabView: View {
                         .navigationDestination(isPresented: $navigateToRequestsView) {
                             RequestsView()
                         }
+                        
                     }
                 }
+                .padding(.top, 50)
+                Spacer()
             }
-            .padding(.top, 50)
-            Spacer()
         }
     }
 }
