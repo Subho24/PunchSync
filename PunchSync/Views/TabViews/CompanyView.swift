@@ -97,9 +97,8 @@ struct CompanyView: View {
                 isLoading = false
                 return
             }
-            
             // Load companies using the company code
-            punchsyncfb.loadCompanies(for: adminCompanyCode) { companies, error in
+            punchsyncFB.loadCompanies(for: adminCompanyCode) { companies, error in
                 if let error = error {
                     errorMessage = error.localizedDescription
                 } else {
