@@ -31,6 +31,7 @@ struct AddAdminView: View {
     
     @State private var currentAdminPassword: String = ""
     @State var showAdminForm = false
+    @State private var isAuthenticating = false
     
     // Animation States
     @State private var passwordFormOffset: CGFloat = 0
@@ -41,10 +42,69 @@ struct AddAdminView: View {
         
         ScrollView {
             VStack {
+                
                 Spacer()
                 
                 VStack {
-                    LockedView(showAdminForm: $showAdminForm)
+                    
+                    Image("Icon")
+                        .resizable()
+                        .frame(width: 180, height: 180)
+                        .padding(.leading, 25)
+                        .padding(.bottom, showAdminForm ? 50 : 30)
+                    
+                    TextFieldView(placeholder: "Your own password", text: $currentAdminPassword, isSecure: true , systemName: "lock", onChange: { errorMessage = ""})
+                        .padding(.top, 35)
+                        .padding(.bottom, showAdminForm ? 35 : 0)
+                        .disabled(showAdminForm)
+                        .background(showAdminForm ? Color(.systemGray6) : Color(.systemBackground))
+                        .cornerRadius(12)
+                        .offset(y: passwordFormOffset)
+                        .scaleEffect(passwordFormScale)
+                    
+                    if !showAdminForm {
+                        
+                        ErrorMessageView(errorMessage: errorMessage)
+                        
+                        Button(action: {
+                            guard let currentAdmin = Auth.auth().currentUser else {
+                                errorMessage = "No admin is currently logged in"
+                                return
+                            }
+                            
+                            guard !currentAdminPassword.isEmpty else {
+                                errorMessage = "Please enter your admin password"
+                                return
+                            }
+                            
+                            errorMessage = "" // Töm eventuella tidigare felmeddelanden
+                            isAuthenticating = true // Markera att autentisering pågår
+                            
+                            let currentAdminEmail = currentAdmin.email ?? ""
+                            let adminPassword = currentAdminPassword
+                            
+                            let credential = EmailAuthProvider.credential(withEmail: currentAdminEmail, password: adminPassword)
+                            
+                            currentAdmin.reauthenticate(with: credential) { success, error in
+                                DispatchQueue.main.async {
+                                    isAuthenticating = false // Autentisering är klar
+                                    
+                                    if let error = error {
+                                        // Fel vid lösenordsverifiering
+                                        errorMessage = "Current admin password is incorrect"
+                                    } else {
+                                        withAnimation {
+                                            showAdminForm = true
+                                        }
+                                        // Lösenord verifierat korrekt
+                                        errorMessage = ""
+                                    }
+                                }
+                            }
+                        }) {
+                            ButtonView(buttontext: isAuthenticating ? "Authenticating..." : "Enter")
+                        }
+                    }
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.top, showAdminForm ? 0 : 100)
