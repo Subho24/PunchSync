@@ -20,6 +20,9 @@ struct ErrorMessageView: View {
                     .padding(.horizontal, 45)
                     .frame(height: 50)
                     .multilineTextAlignment(.leading)
+                    .opacity(errorMessage.isEmpty ? 0 : 1) // Fade out
+                    .offset(x: errorMessage.isEmpty ? 20 : 0) // Slide to the right when disappearing
+                    .animation(.easeInOut, value: errorMessage.isEmpty)
                 Spacer()
             }
         }

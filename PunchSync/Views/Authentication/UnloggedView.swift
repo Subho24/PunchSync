@@ -37,6 +37,7 @@ struct UnloggedView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.background)
+            .navigationBarBackButtonHidden(true)
         }
     }
 }

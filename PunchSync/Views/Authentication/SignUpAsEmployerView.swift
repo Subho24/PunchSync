@@ -37,19 +37,22 @@ struct SignUpAsEmployerView: View {
                 .font(.title2)
                 .padding(.vertical, 20)
             
-            TextFieldView(placeholder: "Full Name", text: $fullName, isSecure: false, systemName: "person")
-            
-            TextFieldView(placeholder: "Personal Number (12 numbers)", text: $personalNumber, isSecure: false, systemName: "lock", onChange: {
-                personalNumber = ValidationUtils.formatPersonalNumber(personalNumber)
+            TextFieldView(placeholder: "Full Name", text: $fullName, isSecure: false, systemName: "person", onChange: {
+                errorMessage = ""
             })
             
-            TextFieldView(placeholder: "Email", text: $email, isSecure: false, systemName: "envelope")
+            TextFieldView(placeholder: "Personal Number (12 numbers)", text: $personalNumber, isSecure: false, systemName: "lock", onChange: {
+                personalNumber = ValidationUtils.formatPersonalNumber(personalNumber);
+                errorMessage = ""
+            })
             
-            TextFieldView(placeholder: "Password", text: $password, isSecure: true, systemName: "lock")
+            TextFieldView(placeholder: "Email", text: $email, isSecure: false, systemName: "envelope", onChange: { errorMessage = ""})
             
-            TextFieldView(placeholder: "Confirm Password", text: $confirmPassword, isSecure: true, systemName: "lock")
+            TextFieldView(placeholder: "Password", text: $password, isSecure: true, systemName: "lock", onChange: { errorMessage = ""})
             
-            TextFieldView(placeholder: "Company Code", text: $companyCode, isSecure: false, systemName: "number")
+            TextFieldView(placeholder: "Confirm Password", text: $confirmPassword, isSecure: true, systemName: "lock", onChange: { errorMessage = ""})
+            
+            TextFieldView(placeholder: "Company Code", text: $companyCode, isSecure: false, systemName: "number", onChange: { errorMessage = ""})
             
             ErrorMessageView(errorMessage: errorMessage)
             
@@ -58,10 +61,15 @@ struct SignUpAsEmployerView: View {
                     if let validationError = ValidationUtils.validateRegisterInputs(fullName: fullName, email: email, password: password, confirmPassword: confirmPassword, companyCode: companyCode, personalNumber: personalNumber) {
                         errorMessage = validationError
                     } else {
-                        punchsyncfb.userRegister(email: email, password: password) { firebaseError in
-                            errorMessage = firebaseError ?? "" // Default to empty string if no Firebase error
+                        punchsyncfb.saveUserData(fullName: fullName, personalNumber: personalNumber, email: email, companyCode: companyCode) { success, error in
+                            if let error = error {
+                                self.errorMessage = error
+                            } else if success {
+                                punchsyncfb.userRegister(email: email, password: password) { firebaseError in
+                                    errorMessage = firebaseError ?? "" // Default to empty string if no Firebase error
+                                }
+                            }
                         }
-                        punchsyncfb.saveUserData(fullName: fullName, personalNumber: personalNumber, email: email, companyCode: companyCode)
                     }
                 }) {
                     ButtonView(buttontext: "Sign Up")

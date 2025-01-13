@@ -9,26 +9,37 @@ import SwiftUI
 import Firebase
 
 struct DashboardTabView: View {
+    
+    @StateObject private var adminData = AdminData()
+    @State var punchsyncfb = PunchSyncFB()
  
     var body: some View {
-        VStack(spacing: 10) {
-        
-            // Profile Section
-            HStack(alignment: .center, spacing: 50) {
+        // Profile Section
+        VStack {
+            HStack(spacing: 50) {
                 Circle()
                     .fill(Color(hex: "ECE9D4"))
                     .frame(width: 80, height: 80)
                     .overlay(Circle().stroke(Color.white, lineWidth: 2))
                     .shadow(radius: 5)
-               
-                VStack(alignment: .leading, spacing: 5){
-                    Text("Name Lastname")
-                        .font(.title3)
-                        .foregroundColor(.black)
-                    Text("Position")
-                        .foregroundColor(.gray)
+                    .padding(.bottom, 5)
+                
+                VStack {
+                    Text("Admin: \(adminData.fullName)")
+                        .font(.headline)
+                    Text("Company Code: \(adminData.companyCode)")
+                }
+                .task {
+                    punchsyncfb.loadAdminData(adminData: adminData) { success, error in
+                        if success {
+                            print("Admin data loaded successfully")
+                        } else if let error = error {
+                            print("Error loading admin data: \(error.localizedDescription)")
+                        }
+                    }
                 }
             }
+        
             
             // Shift Details Table
             VStack(spacing: 0) {
