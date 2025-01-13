@@ -20,9 +20,9 @@ struct ScheduleView: View {
     @State private var selectedDate: Date = Date()
     @State private var showAddScheduleView: Bool = false
 
-    // Variablat për kompaninë dhe përdoruesin (këto mund të merren dinamikisht)
-    let companyCode = "companyCode1" // Vendos kodin e kompanisë këtu
-    let userId = "userId1"           // Vendos ID-në e përdoruesit këtu
+    
+    let companyCode = "companyCode1"
+    let userId = "userId1"
     
     var body: some View {
         NavigationView {

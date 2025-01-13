@@ -4,7 +4,6 @@
 //
 //  Created by Arlinda Islami on 2025-01-08.
 //
-
 import SwiftUI
 import FirebaseAuth
 import Firebase
@@ -15,11 +14,13 @@ struct AddScheduleView: View {
     @State private var selectedEmployee: String = ""
     @State private var shiftStartTime: Date = Date()
     @State private var shiftEndTime: Date = Date()
+    @StateObject private var adminData = AdminData()
+    @State var punchsyncfb = PunchSyncFB()
+    @State private var employees: [EmployeeData] = []
+    @State private var isLoading = true
     
     let companyCode: String
     let userId: String
-    
-    @State private var employees: [String] = [] // Lista e punonjësve që do të merret nga Firebase
     
     var body: some View {
         NavigationView {
@@ -27,35 +28,51 @@ struct AddScheduleView: View {
                 // DropDown për zgjedhjen e punonjësit
                 Section(header: Text("Select Employee")) {
                     Picker("Employee", selection: $selectedEmployee) {
-                        ForEach(employees, id: \.self) { employee in
-                            Text(employee)
+                        ForEach(employees) { employee in
+                            Text(employee.fullName)
                         }
                     }
+                    .pickerStyle(WheelPickerStyle())
                 }
                 
-                // Zgjedhja e orarit të fillimit dhe mbarimit
-                Section(header: Text("Shift Timing")) {
+                // Zgjedhja e orarit të fillimit dhe përfundimit
+                Section(header: Text("Select Shift Times")) {
                     DatePicker("Start Time", selection: $shiftStartTime, displayedComponents: .hourAndMinute)
+                        .datePickerStyle(CompactDatePickerStyle())
+                    
                     DatePicker("End Time", selection: $shiftEndTime, displayedComponents: .hourAndMinute)
+                        .datePickerStyle(CompactDatePickerStyle())
                 }
-                
             }
             .navigationTitle("Add Schedule")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismissView()
+            .navigationBarItems(
+                leading: Button("Cancel") {
+                    dismissView()
+                },
+                trailing: Button("Save") {
+                    saveSchedule() 
+                }
+            )
+            .task {
+                punchsyncfb.loadAdminData(adminData: adminData) { success, error in
+                    if success {
+                        print("Admin data loaded successfully")
+                        
+                        punchsyncfb.loadEmployees(for: adminData.companyCode) { loadedEmployees, error in
+                            if let loadedEmployees = loadedEmployees {
+                                DispatchQueue.main.async {
+                                    self.employees = loadedEmployees
+                                    self.isLoading = false
+                                }
+                                print("Employees loaded: \(loadedEmployees)")
+                            } else if let error = error {
+                                print("Error loading employees: \(error.localizedDescription)")
+                            }
+                        }
+                    } else if let error = error {
+                        print("Error loading admin data: \(error.localizedDescription)")
                     }
                 }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
-                        saveSchedule()
-                    }
-                }
-            }
-            .onAppear {
-                fetchEmployeesFromFirebase() // Thirrja për të marrë punonjësit në ngarkimin e parë të pamjes
             }
         }
     }
@@ -95,28 +112,6 @@ struct AddScheduleView: View {
                     }
                     dismissView()
                 }
-            }
-        }
-    }
-    
-    private func fetchEmployeesFromFirebase() {
-        let databaseRef = Database.database().reference()
-        let usersRef = databaseRef.child("users").child(companyCode)
-        
-        usersRef.observeSingleEvent(of: .value) { snapshot in
-            var employeeList: [String] = []
-            
-            if let userData = snapshot.value as? [String: Any] {
-                for (_, value) in userData {
-                    if let userDict = value as? [String: Any],
-                       let employeeName = userDict["name"] as? String {
-                        employeeList.append(employeeName)
-                    }
-                }
-            }
-            
-            DispatchQueue.main.async {
-                self.employees = employeeList
             }
         }
     }
