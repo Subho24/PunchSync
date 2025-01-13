@@ -53,6 +53,8 @@ struct SignUpAsEmployerView: View {
                 TextFieldView(placeholder: "Confirm Password", text: $confirmPassword, isSecure: true, systemName: "lock", onChange: { errorMessage = ""})
                 
                 TextFieldView(placeholder: "Company Code", text: $companyCode, isSecure: false, systemName: "number", onChange: { errorMessage = ""})
+                    .autocapitalization(.allCharacters) // För iOS 14 och tidigare
+                    .textInputAutocapitalization(.characters)
                 
                 ErrorMessageView(errorMessage: errorMessage)
                 
