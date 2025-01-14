@@ -11,6 +11,7 @@ import Firebase
 struct HomeView: View {
     
     @State var punchsyncfb = PunchSyncFB()
+    @State private var isLocked: Bool = false
     
     init() {
         // This ensures that the TabBar has the correct background color
@@ -24,24 +25,24 @@ struct HomeView: View {
       var body: some View {
           
           HStack {
-                      Spacer()
-                      Button(action: {
-                          punchsyncfb.userLogout()
-                      }) {
-                          Text("Sign out")
-                              .font(.headline)
-                              .foregroundColor(.red)
-                              .padding(.horizontal, 10)
-                              .padding(.vertical, 5)
-                              .background(Color(hex: "ECE9D4"))
-                              .cornerRadius(10)
-                      }
-                  }
+              Spacer()
+              Button(action: {
+                  punchsyncfb.userLogout()
+              }) {
+                  Text("Sign out")
+                      .font(.headline)
+                      .foregroundColor(.red)
+                      .padding(.horizontal, 10)
+                      .padding(.vertical, 5)
+                      .background(Color(hex: "ECE9D4"))
+                      .cornerRadius(10)
+              }
+          }
           
           TabView {
               // Dashboard Tab
               VStack {
-                  DashboardTabView()
+                  DashboardTabView(isLocked: $isLocked)
               }
               .tabItem {
                 VStack {
@@ -51,7 +52,7 @@ struct HomeView: View {
               }
               // Check In / Out Tab
               VStack {
-                Check_in_out()
+                  Check_in_out(isLocked: $isLocked)
               }
               .tabItem {
                 VStack {
@@ -61,7 +62,7 @@ struct HomeView: View {
               }
               // More Tab
               VStack {
-              MoreTabView()
+              MoreTabView(isLocked: $isLocked)
               }
               .tabItem {
                 VStack {
