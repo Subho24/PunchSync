@@ -508,12 +508,13 @@ struct Check_in_out: View {
                         Button(action: {
                             isLocked = true
                         }) {
-                            Text("Lock")
+                            Text(isLocked ? "Locked" : "Lock")
                         }
                         Image(systemName: "lock")
                         Spacer()
                     }
                     .padding(20)
+                    
                     Spacer()
                 }
                 VStack(spacing: 10) {
