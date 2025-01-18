@@ -7,14 +7,14 @@
 
 import Foundation
 
-struct EmployeeData: Identifiable {
+class EmployeeData: Identifiable, ObservableObject {
     let id: String  // This will be the personal number
-    let fullName: String
-    let email: String
-    let personalNumber: String
-    let companyCode: String
-    let isAdmin: Bool
-    let pending: Bool
+    @Published var fullName: String
+    @Published var email: String
+    @Published var personalNumber: String
+    @Published var companyCode: String
+    @Published var isAdmin: Bool
+    @Published var pending: Bool
     
     init(id: String, data: [String: Any]) {
         self.id = id
