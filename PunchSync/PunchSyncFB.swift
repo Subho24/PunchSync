@@ -111,6 +111,7 @@ import FirebaseAuth
         return String((0..<10).map { _ in characters.randomElement()! })
     }
     
+    /*
     func saveUserData(fullName: String, personalNumber: String, email: String, companyCode: String, completion: @escaping (Bool, String?) -> Void) {
         var ref: DatabaseReference!
         
@@ -145,6 +146,50 @@ import FirebaseAuth
                     completion(true, nil)
                 }
                 
+            }
+        }
+    }
+     */
+    
+    func saveUserData(fullName: String, personalNumber: String, email: String, companyCode: String, completion: @escaping (Bool, String?) -> Void) {
+        let ref = Database.database().reference()
+
+        // Validera företagets kod
+        validateCompanyCode(companyCode: companyCode) { isValid, error in
+            if let error = error {
+                completion(false, error)
+                return
+            }
+            
+            guard isValid else {
+                completion(false, "Invalid company code")
+                return
+            }
+
+            //First check if the personal number is already registered
+            ref.child("users").child(companyCode).child(personalNumber).observeSingleEvent(of: .value) { snapshot in
+                if snapshot.exists() {
+                    // Personnummer redan registrerat under detta företag
+                    completion(false, "Personal number already registered for this company.")
+                } else {
+                    // Registrera användaren under företaget
+                    let userData: [String: Any] = [
+                        "fullName": fullName,
+                        "personalSecurityNumber": personalNumber,
+                        "email": email,
+                        "companyCode": companyCode,
+                        "admin": false,
+                        "pending": true
+                    ]
+                    
+                    ref.child("users").child(companyCode).child(personalNumber).setValue(userData) { error, _ in
+                        if let error = error {
+                            completion(false, error.localizedDescription)
+                        } else {
+                            completion(true, nil)
+                        }
+                    }
+                }
             }
         }
     }
@@ -454,5 +499,44 @@ import FirebaseAuth
         }
     }
 
+    func saveLeaveRequest(title: String, requestType: String, description: String, startDate: Date, endDate: Date, completion: @escaping (Bool, String?) -> Void) {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            completion(false, "No user is currently logged in")
+            return
+        }
+        
+        // Validate input
+        guard !title.isEmpty else {
+            completion(false, "Title is required")
+            return
+        }
+        
+        guard !requestType.isEmpty else {
+            completion(false, "Request type is required")
+            return
+        }
+        
+        let ref = Database.database().reference()
+        
+        let requestData: [String: Any] = [
+            "title": title,
+            "requestType": requestType,
+            "description": description,
+            "startDate": startDate.timeIntervalSince1970,
+            "endDate": endDate.timeIntervalSince1970,
+            "timestamp": ServerValue.timestamp()
+        ]
+        
+        ref.child("leaveRequests")
+            .child(userId)
+            .childByAutoId()
+            .setValue(requestData) { error, _ in
+                if let error = error {
+                    completion(false, error.localizedDescription)
+                } else {
+                    completion(true, nil)
+                }
+            }
+    }
 
 }

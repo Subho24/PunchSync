@@ -21,6 +21,9 @@ struct LeaveRequestView: View {
     
     @State var punchsyncfb = PunchSyncFB()
     
+    @State private var isLoading = false
+    @State private var isSuccess = false
+    
     var body: some View {
         
         ScrollView {
@@ -127,7 +130,24 @@ struct LeaveRequestView: View {
                 .padding(.horizontal, 50)
                 .padding(.bottom, 30)
                 
-                ButtonView(buttontext: "Send Leave Request")
+                Button(action: {
+                    punchsyncfb.saveLeaveRequest(title: title, requestType: selectedRequestType, description: description, startDate: startDate, endDate: startDate,
+                        completion: { success, message in
+                             isLoading = false
+                             if success {
+                                 isSuccess = true
+                                 title = ""
+                                 selectedRequestType = ""
+                                 description = ""
+                                 startDate = Date()
+                                 endDate = Calendar.current.date(byAdding: .month, value: 1, to: Date())!
+                             } else {
+                                 isSuccess = false
+                             }
+                         })
+                         }) {
+                             ButtonView(buttontext: "Send Leave Request")
+                    }
             }
         }
     }
