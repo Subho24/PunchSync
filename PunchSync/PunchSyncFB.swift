@@ -423,5 +423,36 @@ import FirebaseAuth
             completion(employees, nil)
         }
     }
+    
+    func loadEmployeeData(employeeData: EmployeeData, completion: @escaping (Bool, Error?) -> Void) {
+        let ref = Database.database().reference()
+        
+        // Kontrollera att en användare är inloggad
+        guard let currentUser = Auth.auth().currentUser else {
+            completion(false, NSError(domain: "", code: 401, userInfo: [NSLocalizedDescriptionKey: "No user is currently logged in"]))
+            return
+        }
+        
+        let userId = currentUser.uid
+        
+        // Hämta data från databasen för den inloggade användaren
+        ref.child("users").child(userId).observeSingleEvent(of: .value) { snapshot in
+            guard let data = snapshot.value as? [String: Any] else {
+                completion(false, NSError(domain: "", code: 404, userInfo: [NSLocalizedDescriptionKey: "Employee data not found"]))
+                return
+            }
+            
+            // Extrahera data och tilldela det till EmployeeData-objektet
+            employeeData.fullName = data["fullName"] as? String ?? "Unknown Employee"
+            employeeData.companyCode = data["companyCode"] as? String ?? "Unknown Company Code"
+            employeeData.email = data["email"] as? String ?? ""
+            employeeData.personalNumber = data["personalSecurityNumber"] as? String ?? ""
+            employeeData.isAdmin = data["admin"] as? Bool ?? false
+            employeeData.pending = data["pending"] as? Bool ?? false
+            
+            completion(true, nil)
+        }
+    }
+
 
 }
