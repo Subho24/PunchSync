@@ -23,6 +23,7 @@ struct LeaveRequestView: View {
     
     @State private var isLoading = false
     @State private var isSuccess = false
+    @State var errorMessage = ""
     
     var body: some View {
         
@@ -130,23 +131,26 @@ struct LeaveRequestView: View {
                 .padding(.horizontal, 50)
                 .padding(.bottom, 30)
                 
+                ErrorMessageView(errorMessage: errorMessage)
+                
                 Button(action: {
                     punchsyncfb.saveLeaveRequest(title: title, requestType: selectedRequestType, description: description, startDate: startDate, endDate: startDate,
-                        completion: { success, message in
-                             isLoading = false
-                             if success {
-                                 isSuccess = true
-                                 title = ""
-                                 selectedRequestType = ""
-                                 description = ""
-                                 startDate = Date()
-                                 endDate = Calendar.current.date(byAdding: .month, value: 1, to: Date())!
-                             } else {
-                                 isSuccess = false
+                        completion: { success, error in
+                        if let error = error {
+                            isSuccess = false
+                            self.errorMessage = error
+                        } else if success {
+                             isSuccess = true
+                             title = ""
+                             selectedRequestType = ""
+                             description = ""
+                             startDate = Date()
+                             endDate = Calendar.current.date(byAdding: .month, value: 1, to: Date())!
+                             errorMessage = ""
                              }
                          })
-                         }) {
-                             ButtonView(buttontext: "Send Leave Request")
+                     }) {
+                         ButtonView(buttontext: "Send Leave Request")
                     }
             }
         }

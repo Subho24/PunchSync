@@ -516,6 +516,34 @@ import FirebaseAuth
             return
         }
         
+        // Get today's start of day for comparison
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        
+        // Check if dates have been modified from their initial values
+        let initialStartDate = calendar.startOfDay(for: Date())
+        let initialEndDate = calendar.startOfDay(for: calendar.date(byAdding: .month, value: 1, to: Date())!)
+        
+        let selectedStartDate = calendar.startOfDay(for: startDate)
+        let selectedEndDate = calendar.startOfDay(for: endDate)
+        
+        if selectedStartDate == initialStartDate || selectedEndDate == initialEndDate {
+            completion(false, "Please select start and end dates")
+            return
+        }
+        
+        // Validate start date is not in the past
+        guard selectedStartDate >= today else {
+            completion(false, "Start date cannot be in the past")
+            return
+        }
+        
+        // Validate end date is after start date
+        guard selectedEndDate >= selectedStartDate else {
+            completion(false, "End date must be after start date")
+            return
+        }
+        
         let ref = Database.database().reference()
         
         let requestData: [String: Any] = [
