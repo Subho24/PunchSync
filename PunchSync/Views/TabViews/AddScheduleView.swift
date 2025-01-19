@@ -26,24 +26,34 @@ struct AddScheduleView: View {
     var body: some View {
         NavigationView {
             Form {
-                // Dropdown for selecting the employee
-                Section(header: Text("Select Employee")) {
-                    Picker("Employee", selection: $selectedEmployee) {
-                        ForEach(employees) { employee in
-                            Text(employee.fullName)
-                                .tag(employee.personalNumber)
+                if isLoading {
+                    ProgressView("Loading employees...")
+                } else {
+                    // Dropdown for selecting the employee
+                    Section(header: Text("Select Employee")) {
+                        Picker("Employee", selection: $selectedEmployee) {
+                            ForEach(employees) { employee in
+                                Text(employee.fullName)
+                                    .tag(employee.personalNumber)
+                            }
+                        }
+                        .pickerStyle(WheelPickerStyle())
+                        .onAppear {
+                            // Automatically select the first employee if none is selected
+                            if selectedEmployee.isEmpty, let firstEmployee = employees.first {
+                                selectedEmployee = firstEmployee.personalNumber
+                            }
                         }
                     }
-                    .pickerStyle(WheelPickerStyle())
-                }
 
-                // Select shift start and end times
-                Section(header: Text("Select Shift Times")) {
-                    DatePicker("Start Time", selection: $shiftStartTime, displayedComponents: .hourAndMinute)
-                        .datePickerStyle(CompactDatePickerStyle())
+                    // Select shift start and end times
+                    Section(header: Text("Select Shift Times")) {
+                        DatePicker("Start Time", selection: $shiftStartTime, displayedComponents: .hourAndMinute)
+                            .datePickerStyle(CompactDatePickerStyle())
 
-                    DatePicker("End Time", selection: $shiftEndTime, displayedComponents: .hourAndMinute)
-                        .datePickerStyle(CompactDatePickerStyle())
+                        DatePicker("End Time", selection: $shiftEndTime, displayedComponents: .hourAndMinute)
+                            .datePickerStyle(CompactDatePickerStyle())
+                    }
                 }
             }
             .navigationTitle("Add Schedule")
@@ -54,46 +64,51 @@ struct AddScheduleView: View {
                 trailing: Button("Save") {
                     saveSchedule()
                 }
+                .disabled(selectedEmployee.isEmpty || isLoading) // Disable if no employee or loading
             )
             .task {
-                punchsyncfb.loadAdminData(adminData: adminData) { success, error in
-                    if success {
-                        print("Admin data loaded successfully")
-                        
-                        punchsyncfb.loadEmployees(for: adminData.companyCode) { loadedEmployees, error in
-                            if let loadedEmployees = loadedEmployees {
-                                DispatchQueue.main.async {
-                                    self.employees = loadedEmployees
-                                    self.isLoading = false
-                                }
-                                print("Employees loaded: \(loadedEmployees)")
-                            } else if let error = error {
-                                print("Error loading employees: \(error.localizedDescription)")
-                            }
+                loadAdminAndEmployeeData()
+            }
+        }
+    }
+
+    private func loadAdminAndEmployeeData() {
+        punchsyncfb.loadAdminData(adminData: adminData) { success, error in
+            if success {
+                print("Admin data loaded successfully")
+                punchsyncfb.loadEmployees(for: adminData.companyCode) { loadedEmployees, error in
+                    if let loadedEmployees = loadedEmployees {
+                        DispatchQueue.main.async {
+                            self.employees = loadedEmployees
+                            self.isLoading = false
                         }
+                        print("Employees loaded: \(loadedEmployees)")
                     } else if let error = error {
-                        print("Error loading admin data: \(error.localizedDescription)")
+                        print("Error loading employees: \(error.localizedDescription)")
+                        self.isLoading = false
                     }
                 }
+            } else if let error = error {
+                print("Error loading admin data: \(error.localizedDescription)")
+                self.isLoading = false
             }
         }
     }
 
     private func saveSchedule() {
-        // Ensure a valid employee is selected
         guard let selectedEmployeeData = employees.first(where: { $0.personalNumber == selectedEmployee }) else {
             print("Employee not found")
             return
         }
-        
+
         // Format the time
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
-        
+
         let formattedStartTime = formatter.string(from: shiftStartTime)
         let formattedEndTime = formatter.string(from: shiftEndTime)
         let dateKey = formattedDate(selectedDate) // Use selected date as key
-        
+
         // Create a new schedule
         let newSchedule = Schedule(
             id: UUID().uuidString,
@@ -101,7 +116,7 @@ struct AddScheduleView: View {
             startTime: formattedStartTime,
             endTime: formattedEndTime
         )
-        
+
         // Save to Firebase
         let databaseRef = Database.database().reference()
         let scheduleRef = databaseRef
@@ -109,7 +124,7 @@ struct AddScheduleView: View {
             .child(companyCode)
             .child(dateKey)
             .child(selectedEmployeeData.personalNumber)
-        
+
         scheduleRef.setValue([
             "employee": selectedEmployeeData.fullName,
             "startTime": formattedStartTime,
@@ -131,13 +146,13 @@ struct AddScheduleView: View {
             }
         }
     }
-    
+
     private func formattedDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter.string(from: date)
     }
-    
+
     private func dismissView() {
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
             if let window = windowScene.windows.first {
