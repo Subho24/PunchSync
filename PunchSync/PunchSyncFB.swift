@@ -566,5 +566,53 @@ import FirebaseAuth
                 }
             }
     }
+    
+    func loadLeaveRequests(completion: @escaping ([LeaveRequest]?, String?) -> Void) {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            completion(nil, "No user is currently logged in")
+            return
+        }
+        
+        let ref = Database.database().reference()
+        
+        ref.child("leaveRequests").child(userId).observeSingleEvent(of: .value) { snapshot in
+            var leaveRequests: [LeaveRequest] = []
+            
+            // Kontrollera om det finns data
+            guard let snapshotValue = snapshot.value as? [String: Any] else {
+                completion([], nil) // Ingen data, returnera en tom lista
+                return
+            }
+            
+            for (key, value) in snapshotValue {
+                if let requestData = value as? [String: Any],
+                   let title = requestData["title"] as? String,
+                   let requestType = requestData["requestType"] as? String,
+                   let description = requestData["description"] as? String,
+                   let startDateInterval = requestData["startDate"] as? TimeInterval,
+                   let endDateInterval = requestData["endDate"] as? TimeInterval {
+                    
+                    let startDate = Date(timeIntervalSince1970: startDateInterval)
+                    let endDate = Date(timeIntervalSince1970: endDateInterval)
+                    
+                    let leaveRequest = LeaveRequest(
+                        id: key,
+                        title: title,
+                        requestType: requestType,
+                        description: description,
+                        startDate: startDate,
+                        endDate: endDate
+                    )
+                    
+                    leaveRequests.append(leaveRequest)
+                }
+            }
+            
+            completion(leaveRequests, nil) // Returnera den laddade listan
+        } withCancel: { error in
+            completion(nil, error.localizedDescription) // Returnera ett felmeddelande om något går fel
+        }
+    }
+
 
 }
