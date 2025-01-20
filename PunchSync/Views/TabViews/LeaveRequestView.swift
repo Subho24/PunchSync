@@ -25,6 +25,8 @@ struct LeaveRequestView: View {
     @State private var isSuccess = false
     @State var errorMessage = ""
     
+    @State private var showToast = false
+    
     var body: some View {
         
         ScrollView {
@@ -139,8 +141,17 @@ struct LeaveRequestView: View {
                         if let error = error {
                             isSuccess = false
                             self.errorMessage = error
+                            showToast = false
                         } else if success {
                              isSuccess = true
+                             withAnimation {
+                                 showToast = true
+                             }
+                             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                 withAnimation {
+                                     showToast = false
+                                 }
+                             }
                              title = ""
                              selectedRequestType = ""
                              description = ""
@@ -153,7 +164,28 @@ struct LeaveRequestView: View {
                          ButtonView(buttontext: "Send Leave Request")
                     }
             }
+            .overlay(alignment: .center) {
+                if showToast {
+                    ToastView(message: "New period created successfully!")
+                        .transition(.move(edge: .bottom))
+                        .animation(.spring(), value: showToast)
+                }
+            }
         }
+    }
+}
+
+struct ToastView: View {
+    let message: String
+    
+    var body: some View {
+        Text(message)
+            .padding()
+            .background(Color.green)
+            .foregroundColor(.white)
+            .cornerRadius(8)
+            .padding(.bottom, 20)
+            .shadow(radius: 5)
     }
 }
 
