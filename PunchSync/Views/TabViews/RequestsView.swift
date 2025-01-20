@@ -11,6 +11,7 @@ struct RequestsView: View {
     
     @StateObject private var adminData = AdminData()
     @State var punchsyncfb = PunchSyncFB()
+    @State private var leaveRequests: [LeaveRequest] = []
     
     var body: some View {
         
@@ -36,21 +37,46 @@ struct RequestsView: View {
                             print("Error loading admin data: \(error.localizedDescription)")
                         }
                     }
+                    await loadAllData()
                 }
             }
         
             HStack {
-                Text("Leave Request")
+                Text("Leave Requests")
                     .font(.title3)
                 Spacer()
             }
             .padding()
             
             List {
-                
+                ForEach(leaveRequests, id: \.id) { LeaveRequest in
+                    Text("\(LeaveRequest.requestType)")
+                }
             }
         }
         .padding(.bottom, 30)
+    }
+    
+    private func loadAllData() async {
+        await withCheckedContinuation { continuation in
+            punchsyncfb.loadAdminData(adminData: adminData) { success, error in
+                if success {
+                    punchsyncfb.loadLeaveRequests { [self] leaveRequests, error in
+                        if let error = error {
+                            print("Failed to load leave requests: \(error)")
+                        } else if let loadedRequests = leaveRequests {
+                            // Update the state variable on the main thread
+                            DispatchQueue.main.async {
+                                self.leaveRequests = loadedRequests
+                            }
+                        }
+                        continuation.resume()
+                    }
+                } else {
+                    continuation.resume()
+                }
+            }
+        }
     }
 }
 
