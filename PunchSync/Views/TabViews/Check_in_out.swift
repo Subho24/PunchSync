@@ -15,6 +15,8 @@ struct Check_in_out: View {
     @State private var userNotFoundAlert = false
     @State private var invalidUserAlertMessage: String = "Personal-Number not registered. Try to check in as a guest"
     
+    @Binding var isLocked: Bool
+    
     
     var punchRecords: [String: Any] = [:]
     
@@ -501,6 +503,20 @@ struct Check_in_out: View {
         
         var body: some View {
             ZStack {
+                VStack {
+                    HStack {
+                        Button(action: {
+                            isLocked = true
+                        }) {
+                            Text(isLocked ? "Locked" : "Lock")
+                        }
+                        Image(systemName: "lock")
+                        Spacer()
+                    }
+                    .padding(20)
+                    
+                    Spacer()
+                }
                 VStack(spacing: 10) {
                     Text("Personal Number")
                         .font(.title)
@@ -530,7 +546,7 @@ struct Check_in_out: View {
                         }
                     }
                     
-
+                    
                     
                     if(!showButtons) {
                         Button(action: {
@@ -662,6 +678,6 @@ struct Check_in_out: View {
 
 struct Check_in_out_Previews: PreviewProvider {
     static var previews: some View {
-        Check_in_out()
+        Check_in_out(isLocked: .constant(true))
     }
 }

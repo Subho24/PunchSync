@@ -111,6 +111,7 @@ import FirebaseAuth
         return String((0..<10).map { _ in characters.randomElement()! })
     }
     
+    /*
     func saveUserData(fullName: String, personalNumber: String, email: String, companyCode: String, completion: @escaping (Bool, String?) -> Void) {
         var ref: DatabaseReference!
         
@@ -145,6 +146,50 @@ import FirebaseAuth
                     completion(true, nil)
                 }
                 
+            }
+        }
+    }
+     */
+    
+    func saveUserData(fullName: String, personalNumber: String, email: String, companyCode: String, completion: @escaping (Bool, String?) -> Void) {
+        let ref = Database.database().reference()
+
+        // Validera företagets kod
+        validateCompanyCode(companyCode: companyCode) { isValid, error in
+            if let error = error {
+                completion(false, error)
+                return
+            }
+            
+            guard isValid else {
+                completion(false, "Invalid company code")
+                return
+            }
+
+            //First check if the personal number is already registered
+            ref.child("users").child(companyCode).child(personalNumber).observeSingleEvent(of: .value) { snapshot in
+                if snapshot.exists() {
+                    // Personnummer redan registrerat under detta företag
+                    completion(false, "Personal number already registered for this company.")
+                } else {
+                    // Registrera användaren under företaget
+                    let userData: [String: Any] = [
+                        "fullName": fullName,
+                        "personalSecurityNumber": personalNumber,
+                        "email": email,
+                        "companyCode": companyCode,
+                        "admin": false,
+                        "pending": true
+                    ]
+                    
+                    ref.child("users").child(companyCode).child(personalNumber).setValue(userData) { error, _ in
+                        if let error = error {
+                            completion(false, error.localizedDescription)
+                        } else {
+                            completion(true, nil)
+                        }
+                    }
+                }
             }
         }
     }
@@ -423,5 +468,151 @@ import FirebaseAuth
             completion(employees, nil)
         }
     }
+    
+    func loadEmployeeData(employeeData: EmployeeData, completion: @escaping (Bool, Error?) -> Void) {
+        let ref = Database.database().reference()
+        
+        // Kontrollera att en användare är inloggad
+        guard let currentUser = Auth.auth().currentUser else {
+            completion(false, NSError(domain: "", code: 401, userInfo: [NSLocalizedDescriptionKey: "No user is currently logged in"]))
+            return
+        }
+        
+        let userId = currentUser.uid
+        
+        // Hämta data från databasen för den inloggade användaren
+        ref.child("users").child(userId).observeSingleEvent(of: .value) { snapshot in
+            guard let data = snapshot.value as? [String: Any] else {
+                completion(false, NSError(domain: "", code: 404, userInfo: [NSLocalizedDescriptionKey: "Employee data not found"]))
+                return
+            }
+            
+            // Extrahera data och tilldela det till EmployeeData-objektet
+            employeeData.fullName = data["fullName"] as? String ?? "Unknown Employee"
+            employeeData.companyCode = data["companyCode"] as? String ?? "Unknown Company Code"
+            employeeData.email = data["email"] as? String ?? ""
+            employeeData.personalNumber = data["personalSecurityNumber"] as? String ?? ""
+            employeeData.isAdmin = data["admin"] as? Bool ?? false
+            employeeData.pending = data["pending"] as? Bool ?? false
+            
+            completion(true, nil)
+        }
+    }
+
+    func saveLeaveRequest(title: String, requestType: String, description: String, startDate: Date, endDate: Date, completion: @escaping (Bool, String?) -> Void) {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            completion(false, "No user is currently logged in")
+            return
+        }
+        
+        // Validate input
+        guard !title.isEmpty else {
+            completion(false, "Title is required")
+            return
+        }
+        
+        guard !requestType.isEmpty else {
+            completion(false, "Request type is required")
+            return
+        }
+        
+        // Get today's start of day for comparison
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        
+        // Check if dates have been modified from their initial values
+        let initialStartDate = calendar.startOfDay(for: Date())
+        let initialEndDate = calendar.startOfDay(for: calendar.date(byAdding: .month, value: 1, to: Date())!)
+        
+        let selectedStartDate = calendar.startOfDay(for: startDate)
+        let selectedEndDate = calendar.startOfDay(for: endDate)
+        
+        if selectedStartDate == initialStartDate || selectedEndDate == initialEndDate {
+            completion(false, "Please select start and end dates")
+            return
+        }
+        
+        // Validate start date is not in the past
+        guard selectedStartDate >= today else {
+            completion(false, "Start date cannot be in the past")
+            return
+        }
+        
+        // Validate end date is after start date
+        guard selectedEndDate >= selectedStartDate else {
+            completion(false, "End date must be after start date")
+            return
+        }
+        
+        let ref = Database.database().reference()
+        
+        let requestData: [String: Any] = [
+            "title": title,
+            "requestType": requestType,
+            "description": description,
+            "startDate": startDate.timeIntervalSince1970,
+            "endDate": endDate.timeIntervalSince1970,
+            "timestamp": ServerValue.timestamp()
+        ]
+        
+        ref.child("leaveRequests")
+            .child(userId)
+            .childByAutoId()
+            .setValue(requestData) { error, _ in
+                if let error = error {
+                    completion(false, error.localizedDescription)
+                } else {
+                    completion(true, nil)
+                }
+            }
+    }
+    
+    func loadLeaveRequests(completion: @escaping ([LeaveRequest]?, String?) -> Void) {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            completion(nil, "No user is currently logged in")
+            return
+        }
+        
+        let ref = Database.database().reference()
+        
+        ref.child("leaveRequests").child(userId).observeSingleEvent(of: .value) { snapshot in
+            var leaveRequests: [LeaveRequest] = []
+            
+            // Kontrollera om det finns data
+            guard let snapshotValue = snapshot.value as? [String: Any] else {
+                completion([], nil) // Ingen data, returnera en tom lista
+                return
+            }
+            
+            for (key, value) in snapshotValue {
+                if let requestData = value as? [String: Any],
+                   let title = requestData["title"] as? String,
+                   let requestType = requestData["requestType"] as? String,
+                   let description = requestData["description"] as? String,
+                   let startDateInterval = requestData["startDate"] as? TimeInterval,
+                   let endDateInterval = requestData["endDate"] as? TimeInterval {
+                    
+                    let startDate = Date(timeIntervalSince1970: startDateInterval)
+                    let endDate = Date(timeIntervalSince1970: endDateInterval)
+                    
+                    let leaveRequest = LeaveRequest(
+                        id: key,
+                        title: title,
+                        requestType: requestType,
+                        description: description,
+                        startDate: startDate,
+                        endDate: endDate
+                    )
+                    
+                    leaveRequests.append(leaveRequest)
+                }
+            }
+            
+            completion(leaveRequests, nil) // Returnera den laddade listan
+        } withCancel: { error in
+            completion(nil, error.localizedDescription) // Returnera ett felmeddelande om något går fel
+        }
+    }
+
 
 }
