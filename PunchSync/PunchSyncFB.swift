@@ -231,10 +231,10 @@ import FirebaseAuth
         }
     }
     
-    func verifyUser(personalNumber: String, approved: Bool, completion: @escaping (Bool, String?) -> Void) {
+    func verifyUser(personalNumber: String, companyCode: String, approved: Bool, completion: @escaping (Bool, String?) -> Void) {
         let ref = Database.database().reference()
         
-        ref.child("users").child(personalNumber).observeSingleEvent(of: .value) { snapshot in
+        ref.child("users").child(companyCode).child(personalNumber).observeSingleEvent(of: .value) { snapshot in
             guard snapshot.exists(),
                   let userData = snapshot.value as? [String: Any],
                   let pending = userData["pending"] as? Bool,
@@ -244,7 +244,7 @@ import FirebaseAuth
             }
             
             if approved {
-                ref.child("users").child(personalNumber).child("pending").setValue(false) { error, _ in
+                ref.child("users").child(companyCode).child(personalNumber).child("pending").setValue(false) { error, _ in
                     if let error = error {
                         completion(false, error.localizedDescription)
                     } else {
@@ -252,7 +252,7 @@ import FirebaseAuth
                     }
                 }
             } else {
-                ref.child("users").child(personalNumber).removeValue { error, _ in
+                ref.child("users").child(companyCode).child(personalNumber).removeValue { error, _ in
                     if let error = error {
                         completion(false, error.localizedDescription)
                     } else {
@@ -449,21 +449,50 @@ import FirebaseAuth
     
     func loadEmployees(for companyCode: String, completion: @escaping ([EmployeeData]?, Error?) -> Void) {
         let ref = Database.database().reference()
+        var allEmployees: [EmployeeData] = []
+        let group = DispatchGroup()
         
+        // First, load admins (stored with auth UIDs)
+        group.enter()
         ref.child("users").observeSingleEvent(of: .value) { snapshot in
-            guard let usersDict = snapshot.value as? [String: [String: Any]] else {
-                completion(nil, NSError(domain: "", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to fetch users"]))
-                return
+            if let usersDict = snapshot.value as? [String: [String: Any]] {
+                // Filter for admins with matching company code
+                let admins = usersDict.compactMap { (uid, userData) -> EmployeeData? in
+                    guard let userCompanyCode = userData["companyCode"] as? String,
+                          let isAdmin = userData["admin"] as? Bool,
+                          userCompanyCode == companyCode,
+                          isAdmin == true else {
+                        return nil
+                    }
+                    return EmployeeData(id: uid, data: userData)
+                }
+                allEmployees.append(contentsOf: admins)
             }
-            
-            // Filtrera ut anställda som tillhör samma companyCode
-            let employees = usersDict.compactMap { (key, value) -> EmployeeData? in
-                guard let userCompanyCode = value["companyCode"] as? String,
-                      userCompanyCode == companyCode else { return nil }
-                return EmployeeData(id: key, data: value)
+            group.leave()
+        }
+        
+        // Then, load regular employees (stored under company code)
+        group.enter()
+        ref.child("users").child(companyCode).observeSingleEvent(of: .value) { snapshot in
+            if let usersDict = snapshot.value as? [String: [String: Any]] {
+                // Filter out pending users
+                let employees = usersDict.compactMap { (personalNumber, userData) -> EmployeeData? in
+                    guard let isPending = userData["pending"] as? Bool,
+                          !isPending,
+                          let isAdmin = userData["admin"] as? Bool,
+                          !isAdmin else {
+                        return nil
+                    }
+                    return EmployeeData(id: personalNumber, data: userData)
+                }
+                allEmployees.append(contentsOf: employees)
             }
-            
-            completion(employees, nil)
+            group.leave()
+        }
+        
+        // When both loads are complete, return all employees
+        group.notify(queue: .main) {
+            completion(allEmployees, nil)
         }
     }
     

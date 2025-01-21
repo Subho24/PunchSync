@@ -164,7 +164,7 @@ struct EmployerView: View {
     }
     
     private func handleUserVerification(personalNumber: String, approved: Bool) {
-        punchsyncfb.verifyUser(personalNumber: personalNumber, approved: approved) { success, error in
+        punchsyncfb.verifyUser(personalNumber: personalNumber, companyCode: adminData.companyCode, approved: approved) { success, error in
             if success {
                 DispatchQueue.main.async {
                     pendingUsers.removeValue(forKey: personalNumber)
