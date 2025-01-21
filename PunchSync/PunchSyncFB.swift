@@ -211,9 +211,7 @@ import FirebaseAuth
     func getPendingUsers(companyCode: String, completion: @escaping ([String: Any]?, String?) -> Void) {
         let ref = Database.database().reference()
         
-        ref.child("users")
-            .queryOrdered(byChild: "companyCode")
-            .queryEqual(toValue: companyCode)
+        ref.child("users").child(companyCode)
             .observeSingleEvent(of: .value) { snapshot in
                 print("Snapshot data: \(snapshot.value ?? "No data")")
                 var pendingUsers: [String: Any] = [:]
