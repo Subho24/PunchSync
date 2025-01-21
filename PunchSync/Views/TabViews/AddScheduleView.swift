@@ -6,158 +6,99 @@
 //
 
 import SwiftUI
-import FirebaseAuth
 import Firebase
 
 struct AddScheduleView: View {
     @Binding var schedules: [String: [Schedule]]
     @Binding var selectedDate: Date
     @State private var selectedEmployee: String = ""
-    @State private var shiftStartTime: Date = Date()
-    @State private var shiftEndTime: Date = Date()
-    @StateObject private var adminData = AdminData()
-    @State var punchsyncfb = PunchSyncFB()
     @State private var employees: [EmployeeData] = []
-    @State private var isLoading = true
+    @State private var startTime: Date = Date()
+    @State private var endTime: Date = Date()
+    @State var punchsyncfb = PunchSyncFB()
 
     let companyCode: String
-    let userId: String
+
+    @Environment(\.presentationMode) var presentationMode
 
     var body: some View {
         NavigationView {
             Form {
-                if isLoading {
-                    ProgressView("Loading employees...")
-                } else {
-                    // Dropdown for selecting the employee
-                    Section(header: Text("Select Employee")) {
-                        Picker("Employee", selection: $selectedEmployee) {
-                            ForEach(employees) { employee in
-                                Text(employee.fullName)
-                                    .tag(employee.personalNumber)
-                            }
-                        }
-                        .pickerStyle(WheelPickerStyle())
-                        .onAppear {
-                            // Automatically select the first employee if none is selected
-                            if selectedEmployee.isEmpty, let firstEmployee = employees.first {
-                                selectedEmployee = firstEmployee.personalNumber
-                            }
+                Section(header: Text("Employee")) {
+                    Picker("Select Employee", selection: $selectedEmployee) {
+                        ForEach(employees) { employee in
+                            Text(employee.fullName).tag(employee.fullName)
                         }
                     }
-
-                    // Select shift start and end times
-                    Section(header: Text("Select Shift Times")) {
-                        DatePicker("Start Time", selection: $shiftStartTime, displayedComponents: .hourAndMinute)
-                            .datePickerStyle(CompactDatePickerStyle())
-
-                        DatePicker("End Time", selection: $shiftEndTime, displayedComponents: .hourAndMinute)
-                            .datePickerStyle(CompactDatePickerStyle())
+                    .pickerStyle(WheelPickerStyle())
+                    .onChange(of: selectedEmployee) { newValue in
+                        // Perform any action when employee selection changes
                     }
+                }
+
+                Section(header: Text("Shift Timing")) {
+                    DatePicker("Start Time", selection: $startTime, displayedComponents: .hourAndMinute)
+                    DatePicker("End Time", selection: $endTime, displayedComponents: .hourAndMinute)
                 }
             }
             .navigationTitle("Add Schedule")
             .navigationBarItems(
-                leading: Button("Cancel") {
-                    dismissView()
-                },
-                trailing: Button("Save") {
-                    saveSchedule()
-                }
-                .disabled(selectedEmployee.isEmpty || isLoading) // Disable if no employee or loading
+                leading: Button("Cancel") { dismiss() },
+                trailing: Button("Save") { saveSchedule() }.disabled(selectedEmployee.isEmpty)
             )
-            .task {
-                loadAdminAndEmployeeData()
-            }
+            .onAppear(perform: loadEmployeesData)
         }
     }
 
-    private func loadAdminAndEmployeeData() {
-        punchsyncfb.loadAdminData(adminData: adminData) { success, error in
-            if success {
-                print("Admin data loaded successfully")
-                punchsyncfb.loadEmployees(for: adminData.companyCode) { loadedEmployees, error in
-                    if let loadedEmployees = loadedEmployees {
-                        DispatchQueue.main.async {
-                            self.employees = loadedEmployees
-                            self.isLoading = false
-                        }
-                        print("Employees loaded: \(loadedEmployees)")
-                    } else if let error = error {
-                        print("Error loading employees: \(error.localizedDescription)")
-                        self.isLoading = false
-                    }
+    private func loadEmployeesData() {
+        punchsyncfb.loadEmployees(for: companyCode) { employees, error in
+            if let error = error {
+                print("Error loading employees: \(error.localizedDescription)")
+            } else if let employees = employees {
+                self.employees = employees
+
+                // Cakto vlerën e parë si të përzgjedhur nëse nuk ka vlerë fillestare
+                if self.selectedEmployee.isEmpty, let firstEmployee = employees.first {
+                    self.selectedEmployee = firstEmployee.fullName
                 }
-            } else if let error = error {
-                print("Error loading admin data: \(error.localizedDescription)")
-                self.isLoading = false
             }
         }
     }
 
     private func saveSchedule() {
-        guard let selectedEmployeeData = employees.first(where: { $0.personalNumber == selectedEmployee }) else {
-            print("Employee not found")
-            return
-        }
+        let schedulesRef = Database.database().reference().child("schedules").child(companyCode).child(formattedDate(date: selectedDate)).childByAutoId()
 
-        // Format the time
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
+        let scheduleData: [String: Any] = [
+            "employeeName": selectedEmployee,
+            "startTime": formatTime(date: startTime),
+            "endTime": formatTime(date: endTime)
+        ]
 
-        let formattedStartTime = formatter.string(from: shiftStartTime)
-        let formattedEndTime = formatter.string(from: shiftEndTime)
-        let dateKey = formattedDate(selectedDate) // Use selected date as key
-
-        // Create a new schedule
-        let newSchedule = Schedule(
-            id: UUID().uuidString,
-            employee: selectedEmployeeData.fullName,
-            startTime: formattedStartTime,
-            endTime: formattedEndTime
-        )
-
-        // Save to Firebase
-        let databaseRef = Database.database().reference()
-        let scheduleRef = databaseRef
-            .child("schedules")
-            .child(companyCode)
-            .child(dateKey)
-            .child(selectedEmployeeData.personalNumber)
-
-        scheduleRef.setValue([
-            "employee": selectedEmployeeData.fullName,
-            "startTime": formattedStartTime,
-            "endTime": formattedEndTime
-        ]) { error, _ in
+        schedulesRef.setValue(scheduleData) { error, _ in
             if let error = error {
                 print("Error saving schedule: \(error.localizedDescription)")
             } else {
-                print("Schedule saved successfully")
-                DispatchQueue.main.async {
-                    // Update UI with new data
-                    if schedules[dateKey] != nil {
-                        schedules[dateKey]?.append(newSchedule)
-                    } else {
-                        schedules[dateKey] = [newSchedule]
-                    }
-                    dismissView()
-                }
+                print("Schedule saved successfully.")
+                // Kur ruhet sukses, kthehet në pamjen tjetër dhe përditësohet lista automatikisht
+                dismiss()
             }
         }
     }
 
-    private func formattedDate(_ date: Date) -> String {
+    private func dismiss() {
+        // Kthimi në pamjen e "ScheduleView" dhe përditësimi automatik i listës
+        self.presentationMode.wrappedValue.dismiss()
+    }
+
+    private func formattedDate(date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter.string(from: date)
     }
 
-    private func dismissView() {
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-            if let window = windowScene.windows.first {
-                window.rootViewController?.dismiss(animated: true)
-            }
-        }
+    private func formatTime(date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
+        return formatter.string(from: date)
     }
 }
