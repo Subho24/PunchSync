@@ -50,9 +50,21 @@ struct RequestsView: View {
             
             List {
                 ForEach(leaveRequests, id: \.id) { LeaveRequest in
-                    Text("\(LeaveRequest.requestType)")
+                    HStack {
+                        Text("\(LeaveRequest.employeeName)")
+                        Spacer()
+                        Text("\(LeaveRequest.requestType)")
+                    }
                 }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color(hex: "ECE9D4"))
+                )
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 0))
             }
+            .scrollContentBackground(.hidden)
         }
         .padding(.bottom, 30)
     }

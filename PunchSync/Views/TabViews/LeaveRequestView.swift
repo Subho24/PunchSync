@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import FirebaseAuth
 
 struct LeaveRequestView: View {
     
@@ -136,7 +137,7 @@ struct LeaveRequestView: View {
                 ErrorMessageView(errorMessage: errorMessage)
                 
                 Button(action: {
-                    punchsyncfb.saveLeaveRequest(title: title, requestType: selectedRequestType, description: description, startDate: startDate, endDate: startDate,
+                    punchsyncfb.saveLeaveRequest(title: title, requestType: selectedRequestType, description: description, startDate: startDate, endDate: startDate,  employeeName: employeeData.fullName,
                         completion: { success, error in
                         if let error = error {
                             isSuccess = false

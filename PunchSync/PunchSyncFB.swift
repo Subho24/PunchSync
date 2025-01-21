@@ -499,7 +499,7 @@ import FirebaseAuth
         }
     }
 
-    func saveLeaveRequest(title: String, requestType: String, description: String, startDate: Date, endDate: Date, completion: @escaping (Bool, String?) -> Void) {
+    func saveLeaveRequest(title: String, requestType: String, description: String, startDate: Date, endDate: Date, employeeName: String, completion: @escaping (Bool, String?) -> Void) {
         guard let userId = Auth.auth().currentUser?.uid else {
             completion(false, "No user is currently logged in")
             return
@@ -552,7 +552,9 @@ import FirebaseAuth
             "description": description,
             "startDate": startDate.timeIntervalSince1970,
             "endDate": endDate.timeIntervalSince1970,
-            "timestamp": ServerValue.timestamp()
+            "timestamp": ServerValue.timestamp(),
+            "employeeName": employeeName,
+            "userId": userId
         ]
         
         ref.child("leaveRequests")
@@ -590,7 +592,8 @@ import FirebaseAuth
                    let requestType = requestData["requestType"] as? String,
                    let description = requestData["description"] as? String,
                    let startDateInterval = requestData["startDate"] as? TimeInterval,
-                   let endDateInterval = requestData["endDate"] as? TimeInterval {
+                   let endDateInterval = requestData["endDate"] as? TimeInterval,
+                   let employeeName = requestData["employeeName"] as? String {
                     
                     let startDate = Date(timeIntervalSince1970: startDateInterval)
                     let endDate = Date(timeIntervalSince1970: endDateInterval)
@@ -601,7 +604,8 @@ import FirebaseAuth
                         requestType: requestType,
                         description: description,
                         startDate: startDate,
-                        endDate: endDate
+                        endDate: endDate,
+                        employeeName: employeeName
                     )
                     
                     leaveRequests.append(leaveRequest)
