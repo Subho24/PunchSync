@@ -9,11 +9,14 @@ import SwiftUI
 import Firebase
 
 struct HomeView: View {
+    var isAdmin: Bool
     
     @State var punchsyncfb = PunchSyncFB()
     @State private var isLocked: Bool = false
     
-    init() {
+    init(isAdmin: Bool) {
+        
+        self.isAdmin = isAdmin
         // This ensures that the TabBar has the correct background color
         let appearance = UITabBarAppearance()
         appearance.configureWithOpaqueBackground()
@@ -39,41 +42,78 @@ struct HomeView: View {
               }
           }
           
-          TabView {
-              // Dashboard Tab
-              VStack {
-                  DashboardTabView(isLocked: $isLocked)
+          if isAdmin {
+              TabView {
+                  // Dashboard Tab
+                  VStack {
+                      DashboardTabView(isLocked: $isLocked)
+                  }
+                  .tabItem {
+                      VStack {
+                          Image(systemName: "tray.2.fill")
+                          Text("Dashboard")
+                      }
+                  }
+                  // Check In / Out Tab
+                  VStack {
+                      Check_in_out(isLocked: $isLocked)
+                  }
+                  .tabItem {
+                      VStack {
+                          Image(systemName: "clock")
+                          Text("Check In / Out")
+                      }
+                  }
+                  // More Tab
+                  VStack {
+                      MoreTabView(isLocked: $isLocked)
+                  }
+                  .tabItem {
+                      VStack {
+                          Image(systemName: "list.dash")
+                          Text("More")
+                      }
+                  }
               }
-              .tabItem {
-                VStack {
-                  Image(systemName: "tray.2.fill")
-                  Text("Dashboard")
+          } else {
+              TabView {
+                  // Schedule View
+                  VStack {
+                      ScheduleView()
+                  }
+                  .tabItem {
+                      VStack {
+                        Image(systemName: "calendar")
+                        Text("Schedule")
+                      }
+                    }
+                  // Attest View
+                  VStack {
+                      EmployeeAttestView()
+                  }
+                  .tabItem {
+                      VStack {
+                        Image(systemName: "clock")
+                        Text("Attest")
+                      }
+                    }
+                  // More Tab
+                  VStack {
+                      EmployeeMoreTabView()
+                  }
+                  .tabItem {
+                      VStack {
+                        Image(systemName: "list.dash")
+                        Text("More")
+                      }
+                    }
+                  }
+                 .accentColor(Color.black) // Active Tab
                 }
               }
-              // Check In / Out Tab
-              VStack {
-                  Check_in_out(isLocked: $isLocked)
-              }
-              .tabItem {
-                VStack {
-                  Image(systemName: "clock")
-                  Text("Check In / Out")
-                }
-              }
-              // More Tab
-              VStack {
-              MoreTabView(isLocked: $isLocked)
-              }
-              .tabItem {
-                VStack {
-                  Image(systemName: "list.dash")
-                  Text("More")
-                }
-              }
-            }
-           .accentColor(Color.black) // Active Tab
+
           }
-        }
+          
 
     extension UIColor {
       // Function to convert HEX color to UIColor
@@ -90,5 +130,5 @@ struct HomeView: View {
 }
 
 #Preview {
-    HomeView()
+    HomeView(isAdmin: false) // Eller false för att testa olika scenarier
 }
