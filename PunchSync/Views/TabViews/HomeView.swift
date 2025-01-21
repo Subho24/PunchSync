@@ -13,6 +13,7 @@ struct HomeView: View {
     
     @State var punchsyncfb = PunchSyncFB()
     @State private var isLocked: Bool = false
+    @State private var isReady: Bool = false
     
     init(isAdmin: Bool) {
         
@@ -25,94 +26,105 @@ struct HomeView: View {
         UITabBar.appearance().scrollEdgeAppearance = appearance
     }
     
-      var body: some View {
-          
-          HStack {
-              Spacer()
-              Button(action: {
-                  punchsyncfb.userLogout()
-              }) {
-                  Text("Sign out")
-                      .font(.headline)
-                      .foregroundColor(.red)
-                      .padding(.horizontal, 10)
-                      .padding(.vertical, 5)
-                      .background(Color(hex: "ECE9D4"))
-                      .cornerRadius(10)
-              }
-          }
-          
-          if isAdmin {
-              TabView {
-                  // Dashboard Tab
-                  VStack {
-                      DashboardTabView(isLocked: $isLocked)
-                  }
-                  .tabItem {
-                      VStack {
-                          Image(systemName: "tray.2.fill")
-                          Text("Dashboard")
-                      }
-                  }
-                  // Check In / Out Tab
-                  VStack {
-                      Check_in_out(isLocked: $isLocked)
-                  }
-                  .tabItem {
-                      VStack {
-                          Image(systemName: "clock")
-                          Text("Check In / Out")
-                      }
-                  }
-                  // More Tab
-                  VStack {
-                      MoreTabView(isLocked: $isLocked)
-                  }
-                  .tabItem {
-                      VStack {
-                          Image(systemName: "list.dash")
-                          Text("More")
-                      }
-                  }
-              }
-          } else {
-              TabView {
-                  // Schedule View
-                  VStack {
-                      ScheduleView()
-                  }
-                  .tabItem {
-                      VStack {
-                        Image(systemName: "calendar")
-                        Text("Schedule")
-                      }
+    var body: some View {
+        
+        if !isReady {
+            ProgressView("Loading...")
+                .onAppear {
+                    // Small delay to ensure state is ready
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        isReady = true
                     }
-                  // Attest View
-                  VStack {
-                      EmployeeAttestView()
-                  }
-                  .tabItem {
-                      VStack {
-                        Image(systemName: "clock")
-                        Text("Attest")
-                      }
-                    }
-                  // More Tab
-                  VStack {
-                      EmployeeMoreTabView()
-                  }
-                  .tabItem {
-                      VStack {
-                        Image(systemName: "list.dash")
-                        Text("More")
-                      }
-                    }
-                  }
-                 .accentColor(Color.black) // Active Tab
                 }
-              }
-
-          }
+        } else {
+            
+            HStack {
+                Spacer()
+                Button(action: {
+                    punchsyncfb.userLogout()
+                }) {
+                    Text("Sign out")
+                        .font(.headline)
+                        .foregroundColor(.red)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Color(hex: "ECE9D4"))
+                        .cornerRadius(10)
+                }
+            }
+            
+            if isAdmin {
+                TabView {
+                    // Dashboard Tab
+                    VStack {
+                        DashboardTabView(isLocked: $isLocked)
+                    }
+                    .tabItem {
+                        VStack {
+                            Image(systemName: "tray.2.fill")
+                            Text("Dashboard")
+                        }
+                    }
+                    // Check In / Out Tab
+                    VStack {
+                        Check_in_out(isLocked: $isLocked)
+                    }
+                    .tabItem {
+                        VStack {
+                            Image(systemName: "clock")
+                            Text("Check In / Out")
+                        }
+                    }
+                    // More Tab
+                    VStack {
+                        MoreTabView(isLocked: $isLocked)
+                    }
+                    .tabItem {
+                        VStack {
+                            Image(systemName: "list.dash")
+                            Text("More")
+                        }
+                    }
+                }
+            } else {
+                TabView {
+                    // Schedule View
+                    VStack {
+                        ScheduleView()
+                    }
+                    .tabItem {
+                        VStack {
+                            Image(systemName: "calendar")
+                            Text("Schedule")
+                        }
+                    }
+                    // Attest View
+                    VStack {
+                        EmployeeAttestView()
+                    }
+                    .tabItem {
+                        VStack {
+                            Image(systemName: "clock")
+                            Text("Attest")
+                        }
+                    }
+                    // More Tab
+                    VStack {
+                        EmployeeMoreTabView()
+                    }
+                    .tabItem {
+                        VStack {
+                            Image(systemName: "list.dash")
+                            Text("More")
+                        }
+                    }
+                }
+                .accentColor(Color.black) // Active Tab
+            }
+        }
+        
+    }
+}
           
 
     extension UIColor {
