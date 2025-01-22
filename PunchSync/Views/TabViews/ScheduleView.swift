@@ -49,17 +49,19 @@ struct ScheduleView: View {
                     Divider().padding(.horizontal)
 
                     // Display schedules for selected date
-                    if let dailySchedules = schedules[formattedDate(date: selectedDate)] {
-                        ForEach(dailySchedules) { schedule in
-                            HStack {
-                                VStack(alignment: .leading) {
-                                    Text(schedule.employeeName)
-                                        .font(.headline)
-                                        .foregroundColor(.black)
-                                    Text("\(formatTime(schedule.startTime)) - \(formatTime(schedule.endTime))") // Display start and end time
-                                        .font(.subheadline)
-                                        .foregroundColor(.gray)
-                                }
+                                       if let dailySchedules = schedules[formattedDate(date: selectedDate)] {
+                                           ForEach(dailySchedules.sorted(by: {
+                                               convertStringToDate($0.startTime) < convertStringToDate($1.startTime)
+                                           })) { schedule in
+                                               HStack {
+                                                   VStack(alignment: .leading) {
+                                                       Text(schedule.employeeName)
+                                                           .font(.headline)
+                                                           .foregroundColor(.black)
+                                                       Text("\(formatTime(schedule.startTime)) - \(formatTime(schedule.endTime))")
+                                                           .font(.subheadline)
+                                                           .foregroundColor(.gray)
+                                                   }
 
                                 Spacer()
 
@@ -75,7 +77,7 @@ struct ScheduleView: View {
                                         showEditScheduleView.toggle()
                                     }) {
                                         Image(systemName: "pencil")
-                                            .foregroundColor(.blue)
+                                            .foregroundColor(.black)
                                             .padding(8)
                                             .background(Color.blue.opacity(0.2))
                                             .cornerRadius(8)
