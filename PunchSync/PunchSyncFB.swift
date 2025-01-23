@@ -113,45 +113,6 @@ import FirebaseAuth
     
     /*
     func saveUserData(fullName: String, personalNumber: String, email: String, companyCode: String, completion: @escaping (Bool, String?) -> Void) {
-        var ref: DatabaseReference!
-        
-        ref = Database.database().reference()
-        
-        validateCompanyCode(companyCode: companyCode) { isValid, error in
-            if let error = error {
-                completion(false, error)
-                return
-            }
-            
-            guard isValid else {
-                completion(false, "Invalid company code")
-                return
-            }
-            
-            //First check if the personal number is already registered
-            ref.child("users").child(personalNumber).observeSingleEvent(of: .value) { snapshot in
-                if snapshot.exists() {
-                    completion(false, "Personal number already registered.")
-                } else {
-                    let userData: [String: Any] = [
-                        "fullName": fullName,
-                        "personalSecurityNumber": personalNumber,
-                        "email": email,
-                        "companyCode": companyCode,
-                        "admin": false,
-                        "pending": true
-                    ]
-                    
-                    ref.child("users").child(personalNumber).setValue(userData)
-                    completion(true, nil)
-                }
-                
-            }
-        }
-    }
-     */
-    
-    func saveUserData(fullName: String, personalNumber: String, email: String, companyCode: String, completion: @escaping (Bool, String?) -> Void) {
         let ref = Database.database().reference()
 
         // Validera företagets kod
@@ -193,6 +154,66 @@ import FirebaseAuth
             }
         }
     }
+    */
+    
+    func saveUserData(fullName: String, personalNumber: String, email: String, password: String, companyCode: String, completion: @escaping (Bool, String?) -> Void) {
+        let ref = Database.database().reference()
+
+        // Validate company code
+        validateCompanyCode(companyCode: companyCode) { isValid, error in
+            if let error = error {
+                completion(false, error)
+                return
+            }
+
+            guard isValid else {
+                completion(false, "Invalid company code")
+                return
+            }
+
+            // Check if personal number is already registered for the company
+            ref.child("users").child(companyCode).child(personalNumber).observeSingleEvent(of: .value) { snapshot in
+                if snapshot.exists() {
+                    completion(false, "Personal number already registered for this company.")
+                    return
+                }
+
+                // Create new user in Firebase Authentication
+                Auth.auth().createUser(withEmail: email, password: password) { authResult, error in
+                    if let error = error {
+                        completion(false, error.localizedDescription)
+                        return
+                    }
+
+                    guard let user = authResult?.user else {
+                        completion(false, "Failed to create user")
+                        return
+                    }
+
+                    // Store employee data in Realtime Database
+                    let userData: [String: Any] = [
+                        "fullName": fullName,
+                        "personalSecurityNumber": personalNumber,
+                        "email": email,
+                        "companyCode": companyCode,
+                        "admin": false,
+                        "pending": true
+                    ]
+
+                    ref.child("users").child(user.uid).setValue(userData) { error, _ in
+                        if let error = error {
+                            // Delete the user from Auth if DB write fails
+                            user.delete { _ in }
+                            completion(false, error.localizedDescription)
+                        } else {
+                            completion(true, nil)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     
     func removeUser(personalNumber: String, completion: @escaping (Bool, String?) -> Void) {
         
@@ -496,35 +517,66 @@ import FirebaseAuth
         }
     }
     
+    
     func loadEmployeeData(employeeData: EmployeeData, completion: @escaping (Bool, Error?) -> Void) {
         let ref = Database.database().reference()
         
-        // Kontrollera att en användare är inloggad
+        // Kontrollera om användaren är inloggad
         guard let currentUser = Auth.auth().currentUser else {
             completion(false, NSError(domain: "", code: 401, userInfo: [NSLocalizedDescriptionKey: "No user is currently logged in"]))
             return
         }
         
-        let userId = currentUser.uid
+        let currentUID = currentUser.uid
         
-        // Hämta data från databasen för den inloggade användaren
-        ref.child("users").child(userId).observeSingleEvent(of: .value) { snapshot in
-            guard let data = snapshot.value as? [String: Any] else {
-                completion(false, NSError(domain: "", code: 404, userInfo: [NSLocalizedDescriptionKey: "Employee data not found"]))
+        // Hämta användardata från Firebase
+        ref.child("users").observeSingleEvent(of: .value) { snapshot in
+            guard let usersDict = snapshot.value as? [String: Any] else {
+                completion(false, NSError(domain: "", code: 404, userInfo: [NSLocalizedDescriptionKey: "No users found in the database"]))
                 return
             }
             
-            // Extrahera data och tilldela det till EmployeeData-objektet
-            employeeData.fullName = data["fullName"] as? String ?? "Unknown Employee"
-            employeeData.companyCode = data["companyCode"] as? String ?? "Unknown Company Code"
-            employeeData.email = data["email"] as? String ?? ""
-            employeeData.personalNumber = data["personalSecurityNumber"] as? String ?? ""
-            employeeData.isAdmin = data["admin"] as? Bool ?? false
-            employeeData.pending = data["pending"] as? Bool ?? false
+            // Debugging: skriv ut alla användare för att verifiera om currentUID finns
+            print("Users found in database: \(usersDict)")
             
-            completion(true, nil)
+            // Första sökningen: Kontrollera om användardata finns under currentUID
+            if let userData = usersDict[currentUID] as? [String: Any] {
+                // Hitta användaren med UID
+                employeeData.fullName = userData["fullName"] as? String ?? "Unknown Employee"
+                employeeData.companyCode = userData["companyCode"] as? String ?? "Unknown Company Code"
+                employeeData.email = userData["email"] as? String ?? ""
+                employeeData.personalNumber = userData["personalSecurityNumber"] as? String ?? ""
+                employeeData.isAdmin = userData["admin"] as? Bool ?? false
+                employeeData.pending = userData["pending"] as? Bool ?? false
+                completion(true, nil)
+            } else {
+                // Debugging: skriv ut vad som händer om användaren inte hittas med UID
+                print("User with UID \(currentUID) not found. Checking companyCode...")
+                
+                // Andra sökningen: Kontrollera om användardata finns under companyCode och personalNumber
+                let companyCode = employeeData.companyCode
+                let personalNumber = employeeData.personalNumber
+                ref.child("users").child(companyCode).child(personalNumber).observeSingleEvent(of: .value) { snapshot, _ in
+                    guard let employeeDetails = snapshot.value as? [String: Any] else {
+                        completion(false, NSError(domain: "", code: 404, userInfo: [NSLocalizedDescriptionKey: "Employee data not found"]))
+                        return
+                    }
+
+                    employeeData.fullName = employeeDetails["fullName"] as? String ?? "Unknown Employee"
+                    employeeData.companyCode = companyCode
+                    employeeData.email = employeeDetails["email"] as? String ?? ""
+                    employeeData.personalNumber = personalNumber
+                    employeeData.isAdmin = employeeDetails["admin"] as? Bool ?? false
+                    employeeData.pending = employeeDetails["pending"] as? Bool ?? false
+
+                    completion(true, nil)
+                }
+            }
         }
     }
+
+
+
 
     func saveLeaveRequest(title: String, requestType: String, description: String, startDate: Date, endDate: Date, employeeName: String, completion: @escaping (Bool, String?) -> Void) {
         guard let userId = Auth.auth().currentUser?.uid else {
