@@ -5,6 +5,13 @@
 //  Created by Arlinda Islami on 2025-01-08.
 //
 
+//
+//  AddScheduleView.swift
+//  PunchSync
+//
+//  Created by Arlinda Islami on 2025-01-08.
+//
+
 import SwiftUI
 import Firebase
 
@@ -15,6 +22,8 @@ struct AddScheduleView: View {
     @State private var employees: [EmployeeData] = []
     @State private var startTime: Date = Date()
     @State private var endTime: Date = Date()
+    @State private var showAlert: Bool = false
+    @State private var alertMessage: String = ""
     @State var punchsyncfb = PunchSyncFB()
 
     let companyCode: String
@@ -44,9 +53,13 @@ struct AddScheduleView: View {
             .navigationTitle("Add Schedule")
             .navigationBarItems(
                 leading: Button("Cancel") { dismiss() },
-                trailing: Button("Save") { saveSchedule() }.disabled(selectedEmployee.isEmpty)
+                trailing: Button("Save") { validateAndSaveSchedule() }
+                    .disabled(selectedEmployee.isEmpty)
             )
             .onAppear(perform: loadEmployeesData)
+            .alert(isPresented: $showAlert) {
+                Alert(title: Text("Invalid Input"), message: Text(alertMessage), dismissButton: .default(Text("OK")))
+            }
         }
     }
 
@@ -63,6 +76,24 @@ struct AddScheduleView: View {
                 }
             }
         }
+    }
+
+    private func validateAndSaveSchedule() {
+        // Kontrollo nëse ora e fillimit dhe ora e mbarimit janë të vlefshme
+        if startTime == endTime {
+            alertMessage = "Start Time and End Time cannot be the same. Please choose a valid time."
+            showAlert = true
+            return
+        }
+
+        if startTime > endTime {
+            alertMessage = "Start Time cannot be later than End Time. Please adjust the timing."
+            showAlert = true
+            return
+        }
+
+        // Nëse të gjitha validimet janë të sakta, ruaj orarin
+        saveSchedule()
     }
 
     private func saveSchedule() {
