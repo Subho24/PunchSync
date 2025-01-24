@@ -172,10 +172,17 @@ import FirebaseAuth
             }
 
             // Check if personal number is already registered for the company
-            ref.child("users").child(companyCode).child(personalNumber).observeSingleEvent(of: .value) { snapshot in
-                if snapshot.exists() {
-                    completion(false, "Personal number already registered for this company.")
-                    return
+            ref.child("users").observeSingleEvent(of: .value) { snapshot in
+                if let users = snapshot.value as? [String: [String: Any]] {
+                    for (_, userData) in users {
+                        if let registeredCompanyCode = userData["companyCode"] as? String,
+                           let registeredPersonalNumber = userData["personalSecurityNumber"] as? String,
+                           registeredCompanyCode == companyCode,
+                           registeredPersonalNumber == personalNumber {
+                            completion(false, "Personal number already registered for this company.")
+                            return
+                        }
+                    }
                 }
 
                 // Create new user in Firebase Authentication
