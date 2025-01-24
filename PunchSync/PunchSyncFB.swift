@@ -239,7 +239,7 @@ import FirebaseAuth
     func getPendingUsers(companyCode: String, completion: @escaping ([String: Any]?, String?) -> Void) {
         let ref = Database.database().reference()
         
-        ref.child("users").child(companyCode)
+        ref.child("users")
             .observeSingleEvent(of: .value) { snapshot in
                 print("Snapshot data: \(snapshot.value ?? "No data")")
                 var pendingUsers: [String: Any] = [:]
@@ -247,16 +247,21 @@ import FirebaseAuth
                 for child in snapshot.children {
                     guard let snapshot = child as? DataSnapshot,
                           let userData = snapshot.value as? [String: Any],
+                          let userCompanyCode = userData["companyCode"] as? String,
                           let pending = userData["pending"] as? Bool,
-                          pending == true else {
+                          userCompanyCode == companyCode,
+                          pending == true
+                    else {
                         continue
                     }
                     
                     pendingUsers[snapshot.key] = userData
                 }
-                
                 completion(pendingUsers, nil)
-        }
+            } withCancel: { error in
+                // Hantera fel
+                completion(nil, error.localizedDescription)
+            }
     }
     
     func verifyUser(personalNumber: String, companyCode: String, approved: Bool, completion: @escaping (Bool, String?) -> Void) {
