@@ -264,10 +264,11 @@ import FirebaseAuth
             }
     }
     
-    func verifyUser(personalNumber: String, companyCode: String, approved: Bool, completion: @escaping (Bool, String?) -> Void) {
+    func verifyUser(userId: String, approved: Bool, completion: @escaping (Bool, String?) -> Void) {
         let ref = Database.database().reference()
         
-        ref.child("users").child(companyCode).child(personalNumber).observeSingleEvent(of: .value) { snapshot in
+        // Hämta användaren direkt baserat på userId
+        ref.child("users").child(userId).observeSingleEvent(of: .value) { snapshot in
             guard snapshot.exists(),
                   let userData = snapshot.value as? [String: Any],
                   let pending = userData["pending"] as? Bool,
@@ -277,7 +278,8 @@ import FirebaseAuth
             }
             
             if approved {
-                ref.child("users").child(companyCode).child(personalNumber).child("pending").setValue(false) { error, _ in
+                // Uppdatera användarens status till verifierad
+                ref.child("users").child(userId).child("pending").setValue(false) { error, _ in
                     if let error = error {
                         completion(false, error.localizedDescription)
                     } else {
@@ -285,7 +287,8 @@ import FirebaseAuth
                     }
                 }
             } else {
-                ref.child("users").child(companyCode).child(personalNumber).removeValue { error, _ in
+                // Ta bort användaren om den inte godkänns
+                ref.child("users").child(userId).removeValue { error, _ in
                     if let error = error {
                         completion(false, error.localizedDescription)
                     } else {
@@ -295,6 +298,7 @@ import FirebaseAuth
             }
         }
     }
+
     
     func createProfile(email: String, password: String, fullName: String, personalNumber: String, yourcompanyID: String, completion: @escaping (String?) -> Void) {
         // Step 1: Check if personal number already exists anywhere in the database
@@ -506,7 +510,7 @@ import FirebaseAuth
         
         // Then, load regular employees (stored under company code)
         group.enter()
-        ref.child("users").child(companyCode).observeSingleEvent(of: .value) { snapshot in
+        ref.child("users").observeSingleEvent(of: .value) { snapshot in
             if let usersDict = snapshot.value as? [String: [String: Any]] {
                 // Filter out pending users
                 let employees = usersDict.compactMap { (personalNumber, userData) -> EmployeeData? in
@@ -586,9 +590,6 @@ import FirebaseAuth
             }
         }
     }
-
-
-
 
     func saveLeaveRequest(title: String, requestType: String, description: String, startDate: Date, endDate: Date, employeeName: String, completion: @escaping (Bool, String?) -> Void) {
         guard let userId = Auth.auth().currentUser?.uid else {
