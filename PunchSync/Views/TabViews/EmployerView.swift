@@ -182,13 +182,19 @@ struct EmployerView: View {
     func handleDelete(at offsets: IndexSet) {
         offsets.forEach { index in
             let employee = searchResults[index]
-            punchsyncfb.removeUser(personalNumber: employee.personalNumber) { success, error in
+            let userId = employee.id // Använd 'id' som unikt identifierare
+            
+            punchsyncfb.removeUser(userId: userId) { success, error in
                 if success {
                     // Ta bort från lokala listan efter borttagning från databasen
-                    searchResults.remove(at: index)
+                    DispatchQueue.main.async {
+                        searchResults.remove(at: index)
+                    }
                 } else if let error = error {
                     // Hantera felmeddelandet
-                    self.errorMessage = error
+                    DispatchQueue.main.async {
+                        self.errorMessage = error
+                    }
                 }
             }
         }

@@ -222,11 +222,11 @@ import FirebaseAuth
     }
 
     
-    func removeUser(personalNumber: String, completion: @escaping (Bool, String?) -> Void) {
+    func removeUser(userId: String, completion: @escaping (Bool, String?) -> Void) {
         
         let ref = Database.database().reference()
         
-        ref.child("users").child(personalNumber).removeValue { error, _ in
+        ref.child("users").child(userId).removeValue { error, _ in
             if let error = error {
                 completion(false, error.localizedDescription)
             } else {
