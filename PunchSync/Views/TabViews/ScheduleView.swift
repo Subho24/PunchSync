@@ -68,10 +68,9 @@ struct ScheduleView: View {
                                 // Buttons for edit and delete
                                 HStack {
                                     Button(action: {
-                                        // Show the edit screen with the selected schedule
+                                        print("Editing schedule: \(schedule.id)")
                                         scheduleToEdit = schedule
                                         newEmployeeName = schedule.employeeName
-                                        // Convert stored time to Date
                                         newStartTime = convertStringToDate(schedule.startTime)
                                         newEndTime = convertStringToDate(schedule.endTime)
                                         showEditScheduleView.toggle()
@@ -82,6 +81,7 @@ struct ScheduleView: View {
                                             .background(Color.blue.opacity(0.2))
                                             .cornerRadius(8)
                                     }
+
 
                                     Button(action: {
                                         // Show delete confirmation

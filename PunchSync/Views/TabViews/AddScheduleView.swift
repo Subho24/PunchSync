@@ -5,13 +5,6 @@
 //  Created by Arlinda Islami on 2025-01-08.
 //
 
-//
-//  AddScheduleView.swift
-//  PunchSync
-//
-//  Created by Arlinda Islami on 2025-01-08.
-//
-
 import SwiftUI
 import Firebase
 
@@ -22,8 +15,6 @@ struct AddScheduleView: View {
     @State private var employees: [EmployeeData] = []
     @State private var startTime: Date = Date()
     @State private var endTime: Date = Date()
-    @State private var showAlert: Bool = false
-    @State private var alertMessage: String = ""
     @State var punchsyncfb = PunchSyncFB()
 
     let companyCode: String
@@ -53,13 +44,9 @@ struct AddScheduleView: View {
             .navigationTitle("Add Schedule")
             .navigationBarItems(
                 leading: Button("Cancel") { dismiss() },
-                trailing: Button("Save") { validateAndSaveSchedule() }
-                    .disabled(selectedEmployee.isEmpty)
+                trailing: Button("Save") { saveSchedule() }.disabled(selectedEmployee.isEmpty)
             )
             .onAppear(perform: loadEmployeesData)
-            .alert(isPresented: $showAlert) {
-                Alert(title: Text("Invalid Input"), message: Text(alertMessage), dismissButton: .default(Text("OK")))
-            }
         }
     }
 
@@ -78,31 +65,20 @@ struct AddScheduleView: View {
         }
     }
 
-    private func validateAndSaveSchedule() {
-        // Kontrollo nëse ora e fillimit dhe ora e mbarimit janë të vlefshme
-        if startTime == endTime {
-            alertMessage = "Start Time and End Time cannot be the same. Please choose a valid time."
-            showAlert = true
-            return
-        }
-
-        if startTime > endTime {
-            alertMessage = "Start Time cannot be later than End Time. Please adjust the timing."
-            showAlert = true
-            return
-        }
-
-        // Nëse të gjitha validimet janë të sakta, ruaj orarin
-        saveSchedule()
-    }
-
     private func saveSchedule() {
+        // Gjej punonjësin e përzgjedhur në listën e ngarkuar të punonjësve për të marrë personalSecurityNumber
+        guard let selectedEmployeeData = employees.first(where: { $0.fullName == selectedEmployee }) else {
+            print("Error: Employee not found")
+            return
+        }
+
         let schedulesRef = Database.database().reference().child("schedules").child(companyCode).child(formattedDate(date: selectedDate)).childByAutoId()
 
         let scheduleData: [String: Any] = [
             "employeeName": selectedEmployee,
             "startTime": formatTime(date: startTime),
-            "endTime": formatTime(date: endTime)
+            "endTime": formatTime(date: endTime),
+            "personalSecurityNumber": selectedEmployeeData.personalNumber  // Ruaj personalSecurityNumber
         ]
 
         schedulesRef.setValue(scheduleData) { error, _ in
@@ -110,11 +86,11 @@ struct AddScheduleView: View {
                 print("Error saving schedule: \(error.localizedDescription)")
             } else {
                 print("Schedule saved successfully.")
-                // Kur ruhet sukses, kthehet në pamjen tjetër dhe përditësohet lista automatikisht
                 dismiss()
             }
         }
     }
+
 
     private func dismiss() {
         // Kthimi në pamjen e "ScheduleView" dhe përditësimi automatik i listës
