@@ -66,12 +66,19 @@ struct AddScheduleView: View {
     }
 
     private func saveSchedule() {
+        // Gjej punonjësin e përzgjedhur në listën e ngarkuar të punonjësve për të marrë personalSecurityNumber
+        guard let selectedEmployeeData = employees.first(where: { $0.fullName == selectedEmployee }) else {
+            print("Error: Employee not found")
+            return
+        }
+
         let schedulesRef = Database.database().reference().child("schedules").child(companyCode).child(formattedDate(date: selectedDate)).childByAutoId()
 
         let scheduleData: [String: Any] = [
             "employeeName": selectedEmployee,
             "startTime": formatTime(date: startTime),
-            "endTime": formatTime(date: endTime)
+            "endTime": formatTime(date: endTime),
+            "personalSecurityNumber": selectedEmployeeData.personalNumber  // Ruaj personalSecurityNumber
         ]
 
         schedulesRef.setValue(scheduleData) { error, _ in
@@ -79,11 +86,11 @@ struct AddScheduleView: View {
                 print("Error saving schedule: \(error.localizedDescription)")
             } else {
                 print("Schedule saved successfully.")
-                // Kur ruhet sukses, kthehet në pamjen tjetër dhe përditësohet lista automatikisht
                 dismiss()
             }
         }
     }
+
 
     private func dismiss() {
         // Kthimi në pamjen e "ScheduleView" dhe përditësimi automatik i listës
