@@ -63,13 +63,11 @@ struct SignUpAsEmployerView: View {
                         if let validationError = ValidationUtils.validateRegisterInputs(fullName: fullName, email: email, password: password, confirmPassword: confirmPassword, companyCode: companyCode, personalNumber: personalNumber) {
                             errorMessage = validationError
                         } else {
-                            punchsyncfb.saveUserData(fullName: fullName, personalNumber: personalNumber, email: email, companyCode: companyCode) { success, error in
-                                if let error = error {
-                                    self.errorMessage = error
-                                } else if success {
-                                    punchsyncfb.userRegister(email: email, password: password) { firebaseError in
-                                        errorMessage = firebaseError ?? "" // Default to empty string if no Firebase error
-                                    }
+                            punchsyncfb.saveUserData(fullName: fullName, personalNumber: personalNumber, email: email, password: password, companyCode: companyCode) { success, error in
+                            if let error = error {
+                                self.errorMessage = error
+                            } else if success {
+                                print("User registration and data saving completed successfully!")
                                 }
                             }
                         }
