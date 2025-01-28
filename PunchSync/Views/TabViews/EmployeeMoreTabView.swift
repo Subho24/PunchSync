@@ -24,12 +24,7 @@ struct EmployeeMoreTabView: View {
                     // Profile Section
                     VStack {
                         HStack(spacing: 50) {
-                            Circle()
-                                .fill(Color(hex: "ECE9D4"))
-                                .frame(width: 80, height: 80)
-                                .overlay(Circle().stroke(Color.white, lineWidth: 2))
-                                .shadow(radius: 5)
-                                .padding(.bottom, 5)
+                            ProfileImage()
                             
                             VStack {
                                 Text("\(employeeData.fullName)")
@@ -75,7 +70,7 @@ struct EmployeeMoreTabView: View {
                             ButtonMoreView(title: "Statistic", icon: "chart.bar", color: "8BC5A3")
                         }
                         .navigationDestination(isPresented: $navigateToStatisticView) {
-                            
+                            StatisticView()
                             
                         }
                         

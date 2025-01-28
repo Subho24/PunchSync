@@ -32,14 +32,9 @@ struct LeaveRequestView: View {
         
         ScrollView {
             VStack {
-                HStack {
-                    Circle()
-                        .fill(Color(hex: "ECE9D4"))
-                        .frame(width: 80, height: 80)
-                        .overlay(Circle().stroke(Color.white, lineWidth: 2))
-                        .shadow(radius: 5)
-                        .padding(.bottom, 5)
-                        .padding(.trailing, 15)
+                Spacer()
+                HStack(spacing: 30){
+                    ProfileImage()
                     VStack {
                         Text("\(employeeData.fullName)")
                             .font(.headline)
