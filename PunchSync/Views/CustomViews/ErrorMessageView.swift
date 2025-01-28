@@ -10,6 +10,7 @@ import SwiftUI
 struct ErrorMessageView: View {
     
     var errorMessage: String
+    var height: CGFloat = 50
     
     var body: some View {
         
@@ -18,7 +19,7 @@ struct ErrorMessageView: View {
                 Text(errorMessage)
                     .foregroundStyle(Color.red)
                     .padding(.horizontal, 45)
-                    .frame(height: 50)
+                    .frame(height: height)
                     .multilineTextAlignment(.leading)
                     .opacity(errorMessage.isEmpty ? 0 : 1) // Fade out
                     .offset(x: errorMessage.isEmpty ? 20 : 0) // Slide to the right when disappearing
