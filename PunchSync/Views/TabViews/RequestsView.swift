@@ -70,26 +70,27 @@ struct RequestsView: View {
     }
     
     private func loadAllData() async {
-        await withCheckedContinuation { continuation in
-            punchsyncfb.loadAdminData(adminData: adminData) { success, error in
-                if success {
-                    punchsyncfb.loadLeaveRequests { [self] leaveRequests, error in
-                        if let error = error {
-                            print("Failed to load leave requests: \(error)")
-                        } else if let loadedRequests = leaveRequests {
-                            // Update the state variable on the main thread
-                            DispatchQueue.main.async {
-                                self.leaveRequests = loadedRequests
-                            }
-                        }
-                        continuation.resume()
-                    }
-                } else {
-                    continuation.resume()
-                }
-            }
-        }
-    }
+       await withCheckedContinuation { continuation in
+           punchsyncfb.loadAdminData(adminData: adminData) { success, error in
+               if success {
+                   // När adminData är laddat, ladda leaveRequests
+                   let companyCode = adminData.companyCode
+                   punchsyncfb.loadLeaveRequests(forCompanyCode: companyCode) { leaveRequests, error in
+                       if let error = error {
+                           print("Failed to load leave requests: \(error)")
+                       } else if let loadedRequests = leaveRequests {
+                           DispatchQueue.main.async {
+                               self.leaveRequests = loadedRequests
+                           }
+                       }
+                   }
+               } else if let error = error {
+                   print("Failed to load admin data: \(error.localizedDescription)")
+               }
+               continuation.resume()
+           }
+       }
+   }
 }
 
 #Preview {

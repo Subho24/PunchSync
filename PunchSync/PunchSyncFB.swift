@@ -635,49 +635,56 @@ import FirebaseAuth
             completion(false, "End date must be after start date")
             return
         }
-        
+
         let ref = Database.database().reference()
-        
-        let requestData: [String: Any] = [
-            "title": title,
-            "requestType": requestType,
-            "description": description,
-            "startDate": startDate.timeIntervalSince1970,
-            "endDate": endDate.timeIntervalSince1970,
-            "timestamp": ServerValue.timestamp(),
-            "employeeName": employeeName,
-            "userId": userId
-        ]
-        
-        ref.child("leaveRequests")
-            .child(userId)
-            .childByAutoId()
-            .setValue(requestData) { error, _ in
-                if let error = error {
-                    completion(false, error.localizedDescription)
-                } else {
-                    completion(true, nil)
-                }
+
+        // Förutsatt att användaren har companyCode sparat i sin profil
+        ref.child("users").child(userId).observeSingleEvent(of: .value) { snapshot in
+            guard let userData = snapshot.value as? [String: Any],
+                  let companyCode = userData["companyCode"] as? String else {
+                completion(false, "Company code not found for user")
+                return
             }
-    }
-    
-    func loadLeaveRequests(completion: @escaping ([LeaveRequest]?, String?) -> Void) {
-        guard let userId = Auth.auth().currentUser?.uid else {
-            completion(nil, "No user is currently logged in")
-            return
+
+            // Skapa request data, utan att behöva inkludera companyCode i själva datan
+            let requestData: [String: Any] = [
+                "title": title,
+                "requestType": requestType,
+                "description": description,
+                "startDate": startDate.timeIntervalSince1970,
+                "endDate": endDate.timeIntervalSince1970,
+                "timestamp": ServerValue.timestamp(),
+                "employeeName": employeeName,
+                "userId": userId
+            ]
+            
+            // Spara under companyCode
+            ref.child("leaveRequests")
+                .child(companyCode) // Gruppera under companyCode
+                .childByAutoId() // Generera ett unikt ID för varje leave request
+                .setValue(requestData) { error, _ in
+                    if let error = error {
+                        completion(false, error.localizedDescription)
+                    } else {
+                        completion(true, nil)
+                    }
+                }
         }
-        
+    }
+
+    func loadLeaveRequests(forCompanyCode companyCode: String, completion: @escaping ([LeaveRequest]?, String?) -> Void) {
         let ref = Database.database().reference()
         
-        ref.child("leaveRequests").child(userId).observeSingleEvent(of: .value) { snapshot in
+        // Ladda alla leave requests för ett specifikt companyCode
+        ref.child("leaveRequests").child(companyCode).observeSingleEvent(of: .value) { snapshot in
             var leaveRequests: [LeaveRequest] = []
-            
+
             // Kontrollera om det finns data
             guard let snapshotValue = snapshot.value as? [String: Any] else {
                 completion([], nil) // Ingen data, returnera en tom lista
                 return
             }
-            
+
             for (key, value) in snapshotValue {
                 if let requestData = value as? [String: Any],
                    let title = requestData["title"] as? String,
@@ -686,10 +693,10 @@ import FirebaseAuth
                    let startDateInterval = requestData["startDate"] as? TimeInterval,
                    let endDateInterval = requestData["endDate"] as? TimeInterval,
                    let employeeName = requestData["employeeName"] as? String {
-                    
+
                     let startDate = Date(timeIntervalSince1970: startDateInterval)
                     let endDate = Date(timeIntervalSince1970: endDateInterval)
-                    
+
                     let leaveRequest = LeaveRequest(
                         id: key,
                         title: title,
@@ -699,16 +706,13 @@ import FirebaseAuth
                         endDate: endDate,
                         employeeName: employeeName
                     )
-                    
+
                     leaveRequests.append(leaveRequest)
                 }
             }
-            
-            completion(leaveRequests, nil) // Returnera den laddade listan
-        } withCancel: { error in
-            completion(nil, error.localizedDescription) // Returnera ett felmeddelande om något går fel
+
+            completion(leaveRequests, nil) // Returnera listan av requests för det angivna companyCode
         }
     }
-
 
 }
