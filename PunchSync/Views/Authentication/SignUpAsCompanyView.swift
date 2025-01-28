@@ -31,6 +31,17 @@ struct SignUpAsCompanyView: View {
     
     // UI States
     @State var errorMessage = ""
+    @State var companyNameErrorMessage = ""
+    @State var orgNumberErrorMessage = ""
+    @State var generalErrorMessage = ""
+    
+    @State var nameErrorMessage = ""
+    @State var personalNumberErrorMessage = ""
+    @State var emailErrorMessage = ""
+    @State var passwordErrorMessage = ""
+    @State var confirmPasswordErrorMessage = ""
+    @State var companyCodeErrorMessage = ""
+    
     @State var showNext = false
     
     // Animation States
@@ -53,21 +64,29 @@ struct SignUpAsCompanyView: View {
                         .font(.title2)
                         .padding(.vertical, 50)
                     
-                    Group {
+                    VStack {
                         VStack {
-                            TextFieldView(placeholder: "Company Name", text: $companyName, isSecure: false, systemName: "person", onChange: { errorMessage = ""
+                            TextFieldView(placeholder: "Company Name", text: $companyName, isSecure: false, systemName: "person", onChange: { companyNameErrorMessage = ""
                             })
                                 .disabled(showNext)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                                 .opacity(showNext ? 0.8 : 1)
                             
+                            if !showNext {
+                                ErrorMessageView(errorMessage: companyNameErrorMessage, height: 14)
+                            }
+                            
                             TextFieldView(placeholder: "Organization Number", text: $orgNumber, isSecure: false, systemName: "number", onChange: {
                                 orgNumber = ValidationUtils.formatOrgNumber(orgNumber);
-                                errorMessage = ""
+                                orgNumberErrorMessage = ""; generalErrorMessage = ""
                             })
                             .disabled(showNext)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .opacity(showNext ? 0.8 : 1)
+                            
+                            if !showNext {
+                                ErrorMessageView(errorMessage: orgNumberErrorMessage)
+                            }
                         }
                         .padding(.vertical)
                         .background(showNext ? Color(.systemGray6) : Color(.systemBackground))
@@ -76,15 +95,15 @@ struct SignUpAsCompanyView: View {
                         .scaleEffect(companyFormScale)
                         
                         if !showNext {
-                            ErrorMessageView(errorMessage: errorMessage)
                             
                             Button(action: {
-                                if let validationError = ValidationUtils.validatesignUpAsCompany(companyName: companyName, orgNumber: orgNumber) {
-                                    errorMessage = validationError
-                                } else {
+                                companyNameErrorMessage = ValidationUtils.validateCompanyName(companyName: companyName) ?? ""
+                                orgNumberErrorMessage = ValidationUtils.validateOrgNumber(orgNumber: orgNumber) ?? ""
+                                
+                                if companyNameErrorMessage.isEmpty && orgNumberErrorMessage.isEmpty {
                                     punchsyncfb.saveOrDeleteCompanyData(companyName: companyName, orgNumber: orgNumber, delete: false) { success, error in
                                         if let error = error {
-                                            self.errorMessage = error
+                                            self.generalErrorMessage = error
                                         } else if success {
                                             isCompanyRegistered = true
                                             withAnimation {
@@ -92,12 +111,15 @@ struct SignUpAsCompanyView: View {
                                                 companyFormDisabled = true
                                             }
                                             yourcompanyID = punchsyncfb.companyCode
+                                            generalErrorMessage = ""
                                         }
                                     }
                                 }
                             }) {
                                 ButtonView(buttontext: "Next")
                             }
+                            
+                            ErrorMessageView(errorMessage: generalErrorMessage)
                         }
                     }
                     
@@ -124,37 +146,57 @@ struct SignUpAsCompanyView: View {
                             TextFieldView(placeholder: "xxxxxxxxxx", text: $yourcompanyID, isSecure: false, systemName: "number")
                                 .disabled(true)
                                 .foregroundStyle(Color.gray)
+                                .padding(.bottom, 14)
                             
-                            TextFieldView(placeholder: "Full Name", text: $fullName, isSecure: false, systemName: "person")
+                            TextFieldView(placeholder: "Full Name", text: $fullName, isSecure: false, systemName: "person", onChange: { nameErrorMessage = ""})
+                            
+                            ErrorMessageView(errorMessage: nameErrorMessage, height: 14)
                             
                             TextFieldView(placeholder: "Personal Number (12 numbers)", text: $personalNumber, isSecure: false, systemName: "lock", onChange: {
                                 personalNumber = ValidationUtils.formatPersonalNumber(personalNumber);
-                                errorMessage = ""
+                                personalNumberErrorMessage = ""
                             })
+                            
+                            ErrorMessageView(errorMessage: personalNumberErrorMessage, height: 14)
 
+                            TextFieldView(placeholder: "Email", text: $email, isSecure: false, systemName: "envelope", onChange: { emailErrorMessage = ""})
                             
-                            TextFieldView(placeholder: "Email", text: $email, isSecure: false, systemName: "envelope")
+                            ErrorMessageView(errorMessage: emailErrorMessage, height: 14)
                             
-                            TextFieldView(placeholder: "Password", text: $password, isSecure: true, systemName: "lock")
+                            TextFieldView(placeholder: "Password", text: $password, isSecure: true, systemName: "lock", onChange: { passwordErrorMessage = ""})
                             
-                            TextFieldView(placeholder: "Confirm Password", text: $confirmPassword, isSecure: true, systemName: "lock")
+                            ErrorMessageView(errorMessage: passwordErrorMessage, height: 14)
                             
-                            ErrorMessageView(errorMessage: errorMessage)
+                            TextFieldView(placeholder: "Confirm Password", text: $confirmPassword, isSecure: true, systemName: "lock",  onChange: { confirmPasswordErrorMessage = ""})
+                            
+                            ErrorMessageView(errorMessage: confirmPasswordErrorMessage, height: 14)
                             
                             VStack {
                                 Button(action: {
-                                    if let validationError = ValidationUtils.validateRegisterInputs(fullName: fullName, email: email, password: password, confirmPassword: confirmPassword, companyCode: yourcompanyID, personalNumber: personalNumber) {
-                                        errorMessage = validationError
-                                    } else {
+                                    nameErrorMessage = ValidationUtils.validateName(name: fullName) ?? ""
+                                    personalNumberErrorMessage = ValidationUtils.validatePersonalNumber(personalNumber: personalNumber) ?? ""
+                                    emailErrorMessage = ValidationUtils.validateEmail(email: email) ?? ""
+                                    passwordErrorMessage = ValidationUtils.validatePassword(password: password) ?? ""
+                                    confirmPasswordErrorMessage = ValidationUtils.validateConfirmPassword(password: password, confirmPassword: confirmPassword) ?? ""
+                                    
+                                    if nameErrorMessage.isEmpty &&
+                                        personalNumberErrorMessage.isEmpty &&
+                                        emailErrorMessage.isEmpty &&
+                                        passwordErrorMessage.isEmpty &&
+                                        confirmPasswordErrorMessage.isEmpty {
+                                        
                                         punchsyncfb.createProfile(email: email, password: password, fullName: fullName, personalNumber: personalNumber, yourcompanyID: yourcompanyID) { firebaseError in
-                                            errorMessage = firebaseError ?? "" // Default to empty string if no Firebase error
+                                            generalErrorMessage = firebaseError ?? "" // Default to empty string if no Firebase error
                                         }
                                     }
+                                    
                                 }) {
                                     ButtonView(buttontext: "Add")
                                 }
                             }
                             .padding(.vertical, 10)
+                            
+                            ErrorMessageView(errorMessage: generalErrorMessage)
                         }
                         .offset(y: adminFormOffset)
                         .onAppear {

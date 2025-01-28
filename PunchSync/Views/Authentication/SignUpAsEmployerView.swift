@@ -18,7 +18,14 @@ struct SignUpAsEmployerView: View {
     @State var companyCode = ""
     @State var personalNumber = ""
     
-    @State var errorMessage = ""
+    @State var nameErrorMessage = ""
+    @State var personalNumberErrorMessage = ""
+    @State var emailErrorMessage = ""
+    @State var passwordErrorMessage = ""
+    @State var confirmPasswordErrorMessage = ""
+    @State var companyCodeErrorMessage = ""
+    @State var generalErrorMessage = ""
+    
     
     @State var punchsyncfb = PunchSyncFB()
     
@@ -38,36 +45,66 @@ struct SignUpAsEmployerView: View {
                     .padding(.vertical, 20)
                 
                 TextFieldView(placeholder: "Full Name", text: $fullName, isSecure: false, systemName: "person", onChange: {
-                    errorMessage = ""
+                    nameErrorMessage = ""
                 })
+                
+                ErrorMessageView(errorMessage: nameErrorMessage, height: 14)
                 
                 TextFieldView(placeholder: "Personal Number (12 numbers)", text: $personalNumber, isSecure: false, systemName: "lock", onChange: {
                     personalNumber = ValidationUtils.formatPersonalNumber(personalNumber);
-                    errorMessage = ""
+                    personalNumberErrorMessage = ""
                 })
                 
-                TextFieldView(placeholder: "Email", text: $email, isSecure: false, systemName: "envelope", onChange: { errorMessage = ""})
+                ErrorMessageView(errorMessage: personalNumberErrorMessage, height: 14)
                 
-                TextFieldView(placeholder: "Password", text: $password, isSecure: true, systemName: "lock", onChange: { errorMessage = ""})
+                TextFieldView(placeholder: "Email", text: $email, isSecure: false, systemName: "envelope", onChange: { emailErrorMessage = ""})
                 
-                TextFieldView(placeholder: "Confirm Password", text: $confirmPassword, isSecure: true, systemName: "lock", onChange: { errorMessage = ""})
+                ErrorMessageView(errorMessage: emailErrorMessage, height: 14)
                 
-                TextFieldView(placeholder: "Company Code", text: $companyCode, isSecure: false, systemName: "number", onChange: { errorMessage = ""})
+                TextFieldView(placeholder: "Password", text: $password, isSecure: true, systemName: "lock", onChange: { passwordErrorMessage = ""})
+                
+                ErrorMessageView(errorMessage: passwordErrorMessage, height: 14)
+                
+                TextFieldView(placeholder: "Confirm Password", text: $confirmPassword, isSecure: true, systemName: "lock", onChange: { confirmPasswordErrorMessage = ""})
+                
+                ErrorMessageView(errorMessage: confirmPasswordErrorMessage, height: 14)
+                
+                TextFieldView(placeholder: "Company Code", text: $companyCode, isSecure: false, systemName: "number", onChange: { companyCodeErrorMessage = ""})
                     .autocapitalization(.allCharacters) // För iOS 14 och tidigare
                     .textInputAutocapitalization(.characters)
                 
-                ErrorMessageView(errorMessage: errorMessage)
+                ErrorMessageView(errorMessage: companyCodeErrorMessage, height: 14)
                 
                 VStack {
                     Button(action: {
-                        if let validationError = ValidationUtils.validateRegisterInputs(fullName: fullName, email: email, password: password, confirmPassword: confirmPassword, companyCode: companyCode, personalNumber: personalNumber) {
-                            errorMessage = validationError
-                        } else {
-                            punchsyncfb.saveUserData(fullName: fullName, personalNumber: personalNumber, email: email, password: password, companyCode: companyCode) { success, error in
-                            if let error = error {
-                                self.errorMessage = error
-                            } else if success {
-                                print("User registration and data saving completed successfully!")
+                        nameErrorMessage = ValidationUtils.validateName(name: fullName) ?? ""
+                        personalNumberErrorMessage = ValidationUtils.validatePersonalNumber(personalNumber: personalNumber) ?? ""
+                        emailErrorMessage = ValidationUtils.validateEmail(email: email) ?? ""
+                        passwordErrorMessage = ValidationUtils.validatePassword(password: password) ?? ""
+                        confirmPasswordErrorMessage = ValidationUtils.validateConfirmPassword(password: password, confirmPassword: confirmPassword) ?? ""
+                        companyCodeErrorMessage = ValidationUtils.validateCompanyCode(companyCode: companyCode) ?? ""
+
+                        // Kontrollera om alla valideringar är OK
+                        if nameErrorMessage.isEmpty &&
+                            personalNumberErrorMessage.isEmpty &&
+                            emailErrorMessage.isEmpty &&
+                            passwordErrorMessage.isEmpty &&
+                            confirmPasswordErrorMessage.isEmpty &&
+                            companyCodeErrorMessage.isEmpty {
+                            
+                            punchsyncfb.saveUserData(
+                                fullName: fullName,
+                                personalNumber: personalNumber,
+                                email: email,
+                                password: password,
+                                companyCode: companyCode
+                            ) { success, error in
+                                if let error = error {
+                                    // Hantera fel
+                                    generalErrorMessage = error
+                                } else if success {
+                                    // Hantera framgång
+                                    print("User registration and data saving completed successfully!")
                                 }
                             }
                         }
@@ -76,6 +113,9 @@ struct SignUpAsEmployerView: View {
                     }
                 }
                 .padding(.vertical, 10)
+                
+                ErrorMessageView(errorMessage: generalErrorMessage)
+
             }
         }
     }
