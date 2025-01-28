@@ -1,5 +1,6 @@
 import SwiftUI
 import Firebase
+import FirebaseAuth
 
 struct Check_in_out: View {
     
@@ -13,6 +14,7 @@ struct Check_in_out: View {
     @State private var inBreak = false
     @State private var userValidated = false
     @State private var userNotFoundAlert = false
+    @State private var currCompanyCode : String = ""
     @State private var invalidUserAlertMessage: String = "Personal-Number not registered. Try to check in as a guest"
     
     @Binding var isLocked: Bool
@@ -38,6 +40,20 @@ struct Check_in_out: View {
             userInput += item // Add the input
         }
     }
+    
+    func getCompanyCode(_ userId: String, completion: @escaping (String?) -> Void) {
+        let ref = Database.database().reference()
+
+        ref.child("users").child(userId).observeSingleEvent(of: .value) { snapshot in
+            if let value = snapshot.value as? [String: Any],
+               let companyCode = value["companyCode"] as? String {
+                completion(companyCode)
+            } else {
+                completion(nil) // Return nil if companyCode is not found
+            }
+        }
+    }
+
     
     func resetView() {
         userInput = ""
@@ -197,7 +213,10 @@ struct Check_in_out: View {
             "checkInTime": currentDateTimeString,
             "checkOutTime": "",
             "breakStartTime":  "",
-            "breakEndTime": ""
+            "breakEndTime": "",
+            "approved": "false",
+            "companyCode": currCompanyCode,
+            
         ]
         
         // Reference to the user's punch record for the current date
@@ -673,7 +692,23 @@ struct Check_in_out: View {
                     }
                 }
             }
+            .onAppear {
+                if let currentAdminId = Auth.auth().currentUser?.uid {
+                    getCompanyCode(currentAdminId) { companyCode in
+                        if let code = companyCode {
+                            currCompanyCode = code
+                        }
+                    }
+
+                } else {
+                    print("No admin is currently logged in")
+                    return
+                }
+                
+                print(currCompanyCode, "here")
+            }
         }
+    
     }
 
 struct Check_in_out_Previews: PreviewProvider {
