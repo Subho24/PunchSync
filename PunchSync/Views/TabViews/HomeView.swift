@@ -90,7 +90,7 @@ struct HomeView: View {
                 TabView {
                     // Schedule View
                     VStack {
-                        ScheduleView()
+                        EmployeeScheduleView()
                     }
                     .tabItem {
                         VStack {

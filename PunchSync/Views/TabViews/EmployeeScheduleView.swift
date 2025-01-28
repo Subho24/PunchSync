@@ -18,14 +18,14 @@ struct EmployeeSchedule: Identifiable {
 }
 
 struct EmployeeScheduleView: View {
-    @State private var schedules: [EmployeeSchedule] = []
-    @State private var selectedDate: Date = Date()
-    @State private var errorMessage: String?
-    @State private var personalSecurityNumber: String = ""  // Ky është personalSecurityNumber i përdoruesit aktual
-    @State private var companyCode: String = ""  // Ky është companyCode i përdoruesit aktual
+    @State private var schedules: [EmployeeSchedule] = [] // Lista e plotë e orareve
+    @State private var selectedDate: Date = Date() // Data e përzgjedhur nga përdoruesi
+    @State private var errorMessage: String? // Për të ruajtur gabimet
+    @State private var personalSecurityNumber: String = "" // personalSecurityNumber i përdoruesit aktual
+    @State private var companyCode: String = "" // companyCode i përdoruesit aktual
 
-    // Funksioni për ngarkimin e orareve për përdoruesin e loguar
-    private func loadSchedulesForCurrentUser() {
+    // Funksioni për ngarkimin e të gjitha orareve për përdoruesin aktual
+    private func loadAllSchedulesForCurrentUser() {
         guard let currentUser = Auth.auth().currentUser else {
             print("No user is logged in.")
             return
@@ -49,35 +49,50 @@ struct EmployeeScheduleView: View {
             self.personalSecurityNumber = personalSecurityNumber
             self.companyCode = companyCode
             
-            // Krijo referencën për oraret duke përdorur companyCode dhe personalSecurityNumber
+            // Krijo referencën për të gjitha datat në `schedules` për këtë përdorues
             let schedulesRef = Database.database().reference()
                 .child("schedules")
-                .child(companyCode)  // Përdor companyCode për të gjetur oraret
-                .child(formattedDateString(date: selectedDate))  // Përdor datën e përzgjedhur
-                .child(personalSecurityNumber)  // Përdor personalSecurityNumber për të gjetur oraret për këtë përdorues
-                
+                .child(companyCode)
+            
             schedulesRef.observeSingleEvent(of: .value) { snapshot in
                 var loadedSchedules: [EmployeeSchedule] = []
-
-                if let scheduleInfo = snapshot.value as? [String: Any] {
-                    guard let employeeName = scheduleInfo["employeeName"] as? String,
-                          let startTime = scheduleInfo["startTime"] as? String,
-                          let endTime = scheduleInfo["endTime"] as? String else { return }
-
-                    // Përdor `personalSecurityNumber` si id për orarin
-                    let schedule = EmployeeSchedule(
-                        id: personalSecurityNumber,  // personalSecurityNumber është tani id e orarit
-                        date: formattedDateString(date: selectedDate),  // Data e përzgjedhur
-                        employeeName: employeeName,
-                        startTime: startTime,
-                        endTime: endTime
-                    )
+                
+                // Kalon nëpër të gjitha datat
+                for child in snapshot.children {
+                    guard let dateSnapshot = child as? DataSnapshot else { continue }
+                    let dateKey = dateSnapshot.key // Data në formatin e ruajtur në Firebase
                     
-                    // Shto në listën e orareve të ngarkuara
-                    loadedSchedules.append(schedule)
+                    // Kontrollon nëse ka të dhëna për këtë personalSecurityNumber
+                    if let employeeData = dateSnapshot.childSnapshot(forPath: personalSecurityNumber).value as? [String: Any] {
+                        // Kalon për secilin scheduleID në këtë datë
+                        for childSchedule in dateSnapshot.childSnapshot(forPath: personalSecurityNumber).children {
+                            guard let scheduleSnapshot = childSchedule as? DataSnapshot else { continue }
+                            let scheduleID = scheduleSnapshot.key  // scheduleID si çelës i orarit
+                            
+                            // Merr informacionet për orarin
+                            if let scheduleDetails = scheduleSnapshot.value as? [String: Any] {
+                                guard let employeeName = scheduleDetails["employeeName"] as? String,
+                                      let startTime = scheduleDetails["startTime"] as? String,
+                                      let endTime = scheduleDetails["endTime"] as? String else {
+                                    continue
+                                }
+                                
+                                // Krijon një objekt të `EmployeeSchedule`
+                                let schedule = EmployeeSchedule(
+                                    id: scheduleID, // scheduleID është tani id unike për këtë orar
+                                    date: dateKey,   // Data e ruajtur në Firebase
+                                    employeeName: employeeName,
+                                    startTime: startTime,
+                                    endTime: endTime
+                                )
+                                
+                                loadedSchedules.append(schedule)
+                            }
+                        }
+                    }
                 }
-
-                // Pasi të mbarojë ngarkimi, përditëso të dhënat në UI
+                
+                // Pasi të ngarkohen të gjitha oraret, përditëson listën
                 DispatchQueue.main.async {
                     self.schedules = loadedSchedules
                 }
@@ -85,7 +100,7 @@ struct EmployeeScheduleView: View {
         }
     }
 
-    // Filtron oraret për datën e përzgjedhur
+    // Filtron oraret sipas datës së përzgjedhur nga përdoruesi
     private func filteredSchedules(for date: Date) -> [EmployeeSchedule] {
         let formattedDate = formattedDateString(date: date)
         return schedules.filter { $0.date == formattedDate }
@@ -123,7 +138,7 @@ struct EmployeeScheduleView: View {
                     Text(errorMessage)
                         .foregroundColor(.red)
                         .padding()
-                } else if schedules.isEmpty {
+                } else if filteredSchedules(for: selectedDate).isEmpty {
                     Text("No schedules available for this date.")
                         .foregroundColor(.gray)
                         .padding()
@@ -139,9 +154,9 @@ struct EmployeeScheduleView: View {
                     }
                 }
             }
-            .navigationTitle("Your Schedule")
+            .navigationTitle("My Schedule")
             .onAppear {
-                loadSchedulesForCurrentUser()
+                loadAllSchedulesForCurrentUser()
             }
         }
     }
