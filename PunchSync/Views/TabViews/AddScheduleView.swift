@@ -72,16 +72,25 @@ struct AddScheduleView: View {
             return
         }
 
-        let schedulesRef = Database.database().reference().child("schedules").child(companyCode).child(formattedDate(date: selectedDate)).childByAutoId()
+        // Referenca kryesore për të ruajtur të dhënat
+        let schedulesRef = Database.database()
+            .reference()
+            .child("schedules")
+            .child(companyCode)
+            .child(formattedDate(date: selectedDate))
+            .child(selectedEmployeeData.personalNumber) // Përdor personalSecurityNumber si çelës
+
+        // Gjenero një çelës unik për regjistrimin e ri brenda personalSecurityNumber
+        let newScheduleRef = schedulesRef.childByAutoId()
 
         let scheduleData: [String: Any] = [
             "employeeName": selectedEmployee,
             "startTime": formatTime(date: startTime),
-            "endTime": formatTime(date: endTime),
-            "personalSecurityNumber": selectedEmployeeData.personalNumber  // Ruaj personalSecurityNumber
+            "endTime": formatTime(date: endTime)
         ]
 
-        schedulesRef.setValue(scheduleData) { error, _ in
+        // Ruaj të dhënat në Firebase
+        newScheduleRef.setValue(scheduleData) { error, _ in
             if let error = error {
                 print("Error saving schedule: \(error.localizedDescription)")
             } else {

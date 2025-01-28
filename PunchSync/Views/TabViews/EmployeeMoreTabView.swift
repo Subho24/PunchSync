@@ -56,7 +56,7 @@ struct EmployeeMoreTabView: View {
                             ButtonMoreView(title: "Profile", icon: "person.fill", color: "283B34")
                         }
                         .navigationDestination(isPresented: $navigateToProfileView) {
-                          
+                            ProfileView()
                         }
                         
                         Button(action: {
