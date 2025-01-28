@@ -14,16 +14,10 @@ struct RequestsView: View {
     @State private var leaveRequests: [LeaveRequest] = []
     
     var body: some View {
-        
+    
         VStack {
-            HStack(spacing: 50) {
-                Circle()
-                    .fill(Color(hex: "ECE9D4"))
-                    .frame(width: 80, height: 80)
-                    .overlay(Circle().stroke(Color.white, lineWidth: 2))
-                    .shadow(radius: 5)
-                    .padding(.bottom, 5)
-                
+            HStack(spacing: 20) {
+                ProfileImage()
                 VStack {
                     Text("Admin: \(adminData.fullName)")
                         .font(.headline)
@@ -40,10 +34,15 @@ struct RequestsView: View {
                     await loadAllData()
                 }
             }
+            
         
             HStack {
                 Text("Leave Requests")
-                    .font(.title3)
+                           .font(.largeTitle)
+                           .fontWeight(.bold)
+                           .foregroundColor(.black)
+                           .padding(.top, 20)
+                           .padding(.bottom, 10)
                 Spacer()
             }
             .padding()
@@ -52,6 +51,7 @@ struct RequestsView: View {
                 ForEach(leaveRequests, id: \.id) { LeaveRequest in
                     HStack {
                         Text("\(LeaveRequest.employeeName)")
+                            .foregroundColor(Color.white)
                         Spacer()
                         Text("\(LeaveRequest.requestType)")
                     }
@@ -59,7 +59,7 @@ struct RequestsView: View {
                 .padding()
                 .background(
                     RoundedRectangle(cornerRadius: 16)
-                        .fill(Color(hex: "ECE9D4"))
+                        .fill(Color(hex: "8BC5A3"))
                 )
                 .listRowSeparator(.hidden)
                 .listRowInsets(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 0))

@@ -15,17 +15,24 @@ struct HomeView: View {
     @State private var isLocked: Bool = false
     @State private var isReady: Bool = false
     
+    
     init(isAdmin: Bool) {
         
         self.isAdmin = isAdmin
-        // This ensures that the TabBar has the correct background color
-        let appearance = UITabBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor(hex: "#E0E2C1")
-        UITabBar.appearance().standardAppearance = appearance
-        UITabBar.appearance().scrollEdgeAppearance = appearance
-    }
-    
+         let appearance = UITabBarAppearance()
+         appearance.backgroundColor = UIColor(Color(hex: "B5D8C3")) // Ngjyra pastel blu për sfondin
+         
+         // Ngjyra për tab-et jo aktive
+         appearance.stackedLayoutAppearance.normal.iconColor = UIColor(Color(hex: "FFFFFF")) // Gri e zbehtë për ikonat jo aktive
+         appearance.stackedLayoutAppearance.normal.titleTextAttributes = [
+             .foregroundColor: UIColor(Color(hex: "FFFFFF")) // Gri e zbehtë për tekstin jo aktiv
+         ]
+         UITabBar.appearance().standardAppearance = appearance
+         if #available(iOS 15.0, *) {
+             UITabBar.appearance().scrollEdgeAppearance = appearance
+         }
+     }
+
     var body: some View {
         
         if !isReady {
@@ -45,10 +52,20 @@ struct HomeView: View {
                 }) {
                     Text("Sign out")
                         .font(.headline)
-                        .foregroundColor(.red)
-                        .padding(.horizontal, 10)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 20)
                         .padding(.vertical, 5)
-                        .background(Color(hex: "ECE9D4"))
+                        .background(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color(hex: "FE7E65"),
+                                    Color(hex: "E58D35"),
+                                    Color(hex: "FD9709")
+                                ]),
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
                         .cornerRadius(10)
                 }
             }
@@ -86,6 +103,7 @@ struct HomeView: View {
                         }
                     }
                 }
+                .accentColor(Color(hex: "283B34")) // Active Tab
             } else {
                 TabView {
                     // Schedule View
@@ -119,7 +137,7 @@ struct HomeView: View {
                         }
                     }
                 }
-                .accentColor(Color.black) // Active Tab
+                .accentColor(Color(hex: "283B34")) // Active Tab
             }
         }
         

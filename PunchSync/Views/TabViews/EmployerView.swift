@@ -29,12 +29,7 @@ struct EmployerView: View {
     var body: some View {
         NavigationStack {
             HStack {
-                Circle()
-                    .fill(Color.white)
-                    .frame(width: 80, height: 80)
-                    .overlay(Circle().stroke(Color.white, lineWidth: 2))
-                    .shadow(radius: 5)
-                    .padding(.bottom, 5)
+                ProfileImage()
                 
                 VStack {
                     Text("Admin: \(adminData.fullName)")
@@ -50,7 +45,12 @@ struct EmployerView: View {
             .padding()
             .padding(.leading, 30)
             .frame(maxWidth: .infinity)
-            .background(Color(hex: "ECE9D4"))
+            
+            Text("My Employees")
+                .font(.title2) // Përdor fontin "title2" që është mesatar në madhësi
+                .fontWeight(.semibold) // Dërrmon titullin pak më shumë, por jo shumë të theksuar
+                .foregroundColor(.black) // Ngjyra e tekstit
+                .padding(.top, 20)
             
             VStack {
                 NavigationStack {
@@ -62,6 +62,7 @@ struct EmployerView: View {
             .task {
                 await loadAllData()
             }
+            
             
             VStack {
                 if isLoading {
@@ -76,7 +77,13 @@ struct EmployerView: View {
                             if !employee.pending {
                                 NavigationLink(destination: EmployeeDetailView(employee: employee)) {
                                     HStack() {
+                                        Image(systemName: "person.crop.circle.fill")
+                                        .foregroundColor(.white)
+                                        .frame(width: 30, height: 30)
+                                        
+                                        
                                         Text(employee.fullName)
+                                            .foregroundColor(Color.white)
                                         Spacer()
                                         Text(employee.isAdmin ? "Admin" : "Employee")
                                             .foregroundStyle(employee.isAdmin ? Color.red : Color.blue)
@@ -88,7 +95,7 @@ struct EmployerView: View {
                         .padding()
                         .background(
                             RoundedRectangle(cornerRadius: 16)
-                                .fill(Color(hex: "ECE9D4"))
+                                .fill(Color(hex: "8BC5A3"))
                         )
                         .listRowSeparator(.hidden)
                         .listRowInsets(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 0))

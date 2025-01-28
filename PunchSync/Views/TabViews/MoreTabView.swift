@@ -38,13 +38,7 @@ struct MoreTabView: View {
                         // Profile Section
                         VStack {
                             HStack(spacing: 50) {
-                                Circle()
-                                    .fill(Color(hex: "ECE9D4"))
-                                    .frame(width: 80, height: 80)
-                                    .overlay(Circle().stroke(Color.white, lineWidth: 2))
-                                    .shadow(radius: 5)
-                                    .padding(.bottom, 5)
-                                
+                                ProfileImage()
                                 VStack {
                                     Text("Admin: \(adminData.fullName)")
                                         .font(.headline)

@@ -17,29 +17,8 @@ struct ProfileView: View {
           
             VStack {
                 Spacer().frame(height: 70)
-                Circle()
-                    .fill(Color.white) // Rrethi i bardhë
-                    .frame(width: 80, height: 80)
-                    .overlay(
-                        Circle()
-                            .stroke(LinearGradient(gradient: Gradient(colors: [
-                                Color(hex: "283B34"), // Ngjyra e errët
-                                Color(hex: "60BDCD"), // Ngjyra e kaltrë
-                                Color(hex: "8BC5A3"), // Ngjyra jeshile
-                                Color(hex: "F5C87E"), // Ngjyra e verdhë
-                                Color(hex: "FE7E65")  // Ngjyra portokalli (shtuar)
-                            ]), startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 6) // Bordera gradient me ngjyrat e reja
-                    )
-                    .shadow(radius: 6)
-                    .padding(.bottom, 5)
-                    .overlay(
-                        Image(systemName: "person.fill") // Ikona e profilit
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 60, height: 60)
-                            .clipShape(Circle()) // Shkurtimi i ikonës në formë rrethore
-                            .shadow(radius: 5) // Hije për më shumë thellësi
-                    )
+              ProfileImage()
+                
                 // Korniza për secilën të dhënë
                 VStack(alignment: .leading, spacing: 25) { // Shtuar hapësirë mes secilës kornizë
                     
