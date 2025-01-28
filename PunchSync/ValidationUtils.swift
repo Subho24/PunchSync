@@ -108,6 +108,25 @@ struct ValidationUtils {
         return nil
     }
     
+    static func validateCompanyName(companyName: String) -> String? {
+        if companyName.isEmpty {
+            return "Company name is required."
+        }
+        return nil
+    }
+    
+    static func validateOrgNumber(orgNumber: String) -> String? {
+        if orgNumber.isEmpty {
+            return "Organization number is required."
+        } else if orgNumber.count < 11 {
+            return "Organization number should contain 10 numbers"
+        } else if !isValidOrgNumber(orgNumber) {
+            return "Organization number is invalid."
+        }
+        return nil
+        
+    }
+    
     // Validate email format
     static func isValidEmail(_ email: String) -> Bool {
         let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
@@ -152,13 +171,52 @@ struct ValidationUtils {
         return nil
     }
     
-    static func validateLogin(email: String, password: String) -> String? {
+    static func validateEmail(email: String) -> String? {
         if !isNotEmpty(email) {
             return "Email is required."
         } else if !isValidEmail(email) {
             return "Invalid email format."
+        }
+        return nil
+    }
+    
+    static func validatePassword(password: String) -> String? {
+        if !isNotEmpty(password) {
+            return "Password is required."
         } else if !isValidPassword(password) {
-            return "Password must be at least 6 characters."
+            return "Please enter at least 6 characters."
+        }
+        return nil
+    }
+    
+    static func validateConfirmPassword(password: String, confirmPassword: String) -> String? {
+        if !isNotEmpty(confirmPassword) {
+            return "Password confirmation is required."
+        } else if password != confirmPassword {
+            return "Passwords do not match."
+        }
+        return nil
+    }
+    
+    static func validateName(name: String) -> String? {
+        if !isNotEmpty(name) {
+            return "Name is required."
+        }
+        return nil
+    }
+    
+    static func validateCompanyCode(companyCode: String) -> String? {
+        if !isNotEmpty(companyCode) {
+            return "Company code field is required."
+        }
+        return nil
+    }
+    
+    static func validatePersonalNumber (personalNumber: String) -> String? {
+        if !isNotEmpty(personalNumber) {
+            return "Personal number field cannot be empty."
+        } else if !isValidPersonalNumber(personalNumber) {
+            return "Invalid personal number format."
         }
         return nil
     }
