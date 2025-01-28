@@ -29,15 +29,9 @@ struct EmployerView: View {
     var body: some View {
         NavigationStack {
             HStack {
-                Circle()
-                    .fill(Color.white)
-                    .frame(width: 80, height: 80)
-                    .overlay(Circle().stroke(Color.white, lineWidth: 2))
-                    .shadow(radius: 5)
-                    .padding(.bottom, 5)
+                ProfileImage()
                 
                 VStack {
-                    // Display admin's name
                     Text("Admin: \(adminData.fullName)")
                         .font(.headline)
                 }
@@ -51,9 +45,13 @@ struct EmployerView: View {
             .padding()
             .padding(.leading, 30)
             .frame(maxWidth: .infinity)
-            .background(Color(hex: "ECE9D4"))
             
-           
+            Text("My Employees")
+                .font(.title2) // Përdor fontin "title2" që është mesatar në madhësi
+                .fontWeight(.semibold) // Dërrmon titullin pak më shumë, por jo shumë të theksuar
+                .foregroundColor(.black) // Ngjyra e tekstit
+                .padding(.top, 20)
+            
             VStack {
                 NavigationStack {
                     TextFieldView(placeholder: "Search \(searchText)", text: $searchField, isSecure: false, systemName: "magnifyingglass")
@@ -61,6 +59,10 @@ struct EmployerView: View {
                 .searchable(text: $searchText)
             }
             .padding(.top, 20)
+            .task {
+                await loadAllData()
+            }
+            
             
             VStack {
                 if isLoading {
@@ -68,45 +70,20 @@ struct EmployerView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     if !pendingUsers.isEmpty {
-                        Section(header: Text("Pending Users")) {
-                            ForEach(Array(pendingUsers.keys), id: \.self) { personalNumber in
-                                if let userData = pendingUsers[personalNumber] as? [String: Any],
-                                   let fullName = userData["fullName"] as? String {
-                                    VStack {
-                                        Text(fullName)
-                                            .padding(.bottom, 20)
-                                        HStack {
-                                            Button("Verify") {
-                                                handleUserVerification(personalNumber: personalNumber, approved: true)
-                                            }
-                                            .padding(8)
-                                            .padding(.horizontal, 15)
-                                            .background(Color.green)
-                                            .cornerRadius(10)
-                                            .foregroundStyle(.white)
-                                            
-                                            Button("Deny") {
-                                                handleUserVerification(personalNumber: personalNumber, approved: false)
-                                            }
-                                            .padding(8)
-                                            .padding(.horizontal, 15)
-                                            .background(Color.red)
-                                            .cornerRadius(10)
-                                            .foregroundStyle(.white)
-                                        }
-                                    }
-                                    .padding(.horizontal, 25)
-                                    .padding(.top, 20)
-                                }
-                            }
-                        }
+                        PendingUsersView(pendingUsers: pendingUsers, handleVerification: handleUserVerification)
                     }
                     List {
                         ForEach(searchResults, id: \.id) { employee in
                             if !employee.pending {
                                 NavigationLink(destination: EmployeeDetailView(employee: employee)) {
                                     HStack() {
+                                        Image(systemName: "person.crop.circle.fill")
+                                        .foregroundColor(.white)
+                                        .frame(width: 30, height: 30)
+                                        
+                                        
                                         Text(employee.fullName)
+                                            .foregroundColor(Color.white)
                                         Spacer()
                                         Text(employee.isAdmin ? "Admin" : "Employee")
                                             .foregroundStyle(employee.isAdmin ? Color.red : Color.blue)
@@ -118,7 +95,7 @@ struct EmployerView: View {
                         .padding()
                         .background(
                             RoundedRectangle(cornerRadius: 16)
-                                .fill(Color(hex: "ECE9D4"))
+                                .fill(Color(hex: "8BC5A3"))
                         )
                         .listRowSeparator(.hidden)
                         .listRowInsets(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 0))
@@ -133,41 +110,56 @@ struct EmployerView: View {
         }
     }
     
-    private func loadAllData() async {
+    private func loadAdminData() async {
         // Load admin data first
         await withCheckedContinuation { continuation in
             punchsyncfb.loadAdminData(adminData: adminData) { success, error in
                 if success {
-                    // After admin data is loaded, load employees
-                    punchsyncfb.loadEmployees(for: adminData.companyCode) { loadedEmployees, error in
-                        if let loadedEmployees = loadedEmployees {
-                            DispatchQueue.main.async {
-                                self.employees = loadedEmployees
-                                self.searchResults = loadedEmployees
-                            }
-                            
-                            // After employees are loaded, load pending users
-                            punchsyncfb.getPendingUsers(companyCode: adminData.companyCode) { users, error in
-                                if let pendingUsers = users {
-                                    DispatchQueue.main.async {
-                                        self.pendingUsers = pendingUsers
-                                        self.isLoading = false
-                                    }
-                                }
-                            }
-                        }
+                    continuation.resume()
+                }
+            }
+        }
+    }
+
+    private func loadEmployees() async {
+        await withCheckedContinuation { continuation in
+            punchsyncfb.loadEmployees(for: adminData.companyCode) { loadedEmployees, error in
+                if let loadedEmployees = loadedEmployees {
+                    DispatchQueue.main.async {
+                        self.employees = loadedEmployees
+                        self.searchResults = loadedEmployees
                     }
                 }
                 continuation.resume()
             }
         }
     }
+
+    private func loadPendingUsers() async {
+        await withCheckedContinuation { continuation in
+            punchsyncfb.getPendingUsers(companyCode: adminData.companyCode) { users, error in
+                if let pendingUsers = users {
+                    DispatchQueue.main.async {
+                        self.pendingUsers = pendingUsers
+                        self.isLoading = false
+                    }
+                }
+                continuation.resume()
+            }
+        }
+    }
+
+    private func loadAllData() async {
+        await loadAdminData()
+        await loadEmployees()
+        await loadPendingUsers()
+    }
     
-    private func handleUserVerification(personalNumber: String, approved: Bool) {
-        punchsyncfb.verifyUser(personalNumber: personalNumber, approved: approved) { success, error in
+    private func handleUserVerification(userId: String, approved: Bool) {
+        punchsyncfb.verifyUser(userId: userId, approved: approved) { success, error in
             if success {
                 DispatchQueue.main.async {
-                    pendingUsers.removeValue(forKey: personalNumber)
+                    pendingUsers.removeValue(forKey: userId)
                     if approved {
                         punchsyncfb.loadEmployees(for: adminData.companyCode) { loadedEmployees, error in
                             if let loadedEmployees = loadedEmployees {
@@ -180,33 +172,36 @@ struct EmployerView: View {
             }
         }
     }
-    
-    private func filterEmployees() {
-        if searchField.isEmpty {
-            searchResults = employees
-        } else {
-            searchResults = employees.filter { employee in
-                // Split the full name into words
-                let words = employee.fullName.split(separator: " ")
-                
-                // Check if any word starts with the search text (case insensitive)
-                return words.contains { word in
-                    word.lowercased().hasPrefix(searchField.lowercased())
-                }
+
+    private func searchEmployees(by searchTerm: String) -> [EmployeeData] {
+        return employees.filter { employee in
+            let words = employee.fullName.split(separator: " ")
+            return words.contains { word in
+                word.lowercased().hasPrefix(searchTerm.lowercased())
             }
         }
+    }
+
+    private func filterEmployees() {
+        searchResults = searchField.isEmpty ? employees : searchEmployees(by: searchField)
     }
     
     func handleDelete(at offsets: IndexSet) {
         offsets.forEach { index in
             let employee = searchResults[index]
-            punchsyncfb.removeUser(personalNumber: employee.personalNumber) { success, error in
+            let userId = employee.id // Använd 'id' som unikt identifierare
+            
+            punchsyncfb.removeUser(userId: userId) { success, error in
                 if success {
                     // Ta bort från lokala listan efter borttagning från databasen
-                    searchResults.remove(at: index)
+                    DispatchQueue.main.async {
+                        searchResults.remove(at: index)
+                    }
                 } else if let error = error {
                     // Hantera felmeddelandet
-                    self.errorMessage = error
+                    DispatchQueue.main.async {
+                        self.errorMessage = error
+                    }
                 }
             }
         }

@@ -23,27 +23,103 @@ struct CompanyView: View {
     @State private var saveStatusMessage: String = "" 
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Company Code: \(companyDetails.companyCode)")
-            Text("Organization Number: \(companyDetails.orgNumber)")
+        
+        VStack(alignment: .leading, spacing: 20) {
+    
+        Text("Company Details")
+                   .font(.largeTitle)
+                   .fontWeight(.bold)
+                   .foregroundColor(.black)
+                   .padding(.top, 20)
+                   .padding(.bottom, 10)
+        
             
-            // TextField për të ndryshuar emrin e kompanisë
-            TextField("Enter New Company Name", text: $newCompanyName)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding(.vertical)
+            // Korniza për Company Code
+              HStack {
+                  Text("Company Code:")
+                      .font(.headline)
+                      .foregroundColor(.black)
+                  Spacer()
+                  Text(companyDetails.companyCode)
+                      .font(.body)
+                      .foregroundColor(.gray)
+              }
+              .padding()
+              .background(Color.white)
+              .cornerRadius(15) // Radiusi i këndit
+              .overlay(RoundedRectangle(cornerRadius: 15)
+                          .stroke(Color(hex: "E58D35"), lineWidth: 1)) // Vijë portokalli
+
+              // Korniza për Organization Number
+              HStack {
+                  Text("Organization Number:")
+                      .font(.headline)
+                      .foregroundColor(.black)
+                  Spacer()
+                  Text(companyDetails.orgNumber)
+                      .font(.body)
+                      .foregroundColor(.gray)
+              }
+              .padding()
+              .background(Color.white)
+              .cornerRadius(15) // Radiusi i këndit
+              .overlay(RoundedRectangle(cornerRadius: 15)
+              .stroke(Color(hex: "E58D35"), lineWidth: 1))
+
+              
             
-            // Butoni "Save" për të ruajtur emrin e kompanisë
-            Button(action: {
-                saveCompanyName()
-            }) {
-                Text("Save")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .padding()
-                    .background(Color(hex: "FD9709"))
-                    .cornerRadius(8)
-            }
             
+            
+              HStack {Text("Company Name:")
+                      .font(.headline)
+                      .foregroundColor(.black)
+                      .padding(.leading, 10) // Përdorim padding për të ndihmuar me distancën
+
+                  Spacer()
+
+                  TextField("Enter New Company Name", text: $newCompanyName)
+                        .padding(.vertical)
+                        .padding(.leading, 10)
+                        .background(Color.white)
+                        .cornerRadius(10)
+                        .overlay(
+                            HStack {
+                                Spacer() // Kjo e shtyn ikonen në të djathtën e fushës
+                                Image(systemName: "pencil")
+                                    .foregroundColor(.gray)
+                                    .padding(.trailing, 10)
+                            }
+                        )
+                        .overlay(RoundedRectangle(cornerRadius: 10)
+                                    .stroke(Color(hex: "E58D35"), lineWidth: 1)) // Vijë portokalli për vizualizim më të mirë
+                }
+            
+
+              // Butoni "Save"
+              Button(action: {
+                  saveCompanyName()
+              }) {
+                  Text("Save")
+                      .font(.headline)
+                      .foregroundColor(.white)
+                      .padding()
+                      .frame(maxWidth: 200)
+                      .background(
+                          LinearGradient(
+                              gradient: Gradient(colors: [
+                                  Color(hex: "FE7E65"),
+                                  Color(hex: "E58D35"),
+                                  Color(hex: "FD9709")
+                              ]),
+                              startPoint: .leading,
+                              endPoint: .trailing
+                          )
+                      )
+                      .cornerRadius(15)
+              }
+              .frame(maxWidth: .infinity, alignment: .center) 
+        
+
             // Mesazhi për statusin e ruajtjes
             if !saveStatusMessage.isEmpty {
                 Text(saveStatusMessage)

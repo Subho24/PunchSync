@@ -17,24 +17,19 @@ struct DashboardTabView: View {
  
     var body: some View {
         // Profile Section
-        VStack {
+        VStack(spacing: 20) {
             if isLocked {
                 LockedView(showAdminForm: $showAdminForm)
-                .onChange(of: showAdminForm) {
-                    withAnimation {
-                        isLocked = false
+                    .onChange(of: showAdminForm) {
+                        withAnimation {
+                            isLocked = false
+                        }
                     }
-                }
             } else {
-                HStack(spacing: 50) {
-                    Circle()
-                        .fill(Color(hex: "ECE9D4"))
-                        .frame(width: 80, height: 80)
-                        .overlay(Circle().stroke(Color.white, lineWidth: 2))
-                        .shadow(radius: 5)
-                        .padding(.bottom, 5)
-                    
-                    VStack {
+                HStack(spacing: 30) {
+                    // Profile Icon
+                    ProfileImage()
+                    VStack(alignment: .leading, spacing: 5) {
                         Text("Admin: \(adminData.fullName)")
                             .font(.headline)
                         Text("Company Code: \(adminData.companyCode)")
@@ -49,51 +44,20 @@ struct DashboardTabView: View {
                         }
                     }
                 }
-                
-                
-                // Shift Details Table
-                VStack(spacing: 0) {
+              
+                VStack() {
                     Text("Shift Details")
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color(hex: "ECE9D4"))
                         .font(.headline)
                     
-                    // Table Content
                     VStack(spacing: 0) {
                         HStack {
-                            Text("Shift 1")
-                            Spacer()
-                            Text("12")
-                            Spacer()
-                            Text("5")
+                            Text("Active Employees")
                             Spacer()
                             Text("8")
-                        }
-                        .padding()
-                        .background(Color(hex: "ECE9D4").opacity(0.1))
-                        Divider()
-                        
-                        HStack {
-                            Text("Shift 2")
-                            Spacer()
-                            Text("20")
-                            Spacer()
-                            Text("3")
-                            Spacer()
-                            Text("28")
-                        }
-                        .padding()
-                        Divider()
-                        
-                        HStack {
-                            Text("Shift 3")
-                            Spacer()
-                            Text("9")
-                            Spacer()
-                            Text("4")
-                            Spacer()
-                            Text("30")
+                                .foregroundColor(.green)
                         }
                         .padding()
                         .background(Color(hex: "ECE9D4").opacity(0.1))
@@ -104,11 +68,11 @@ struct DashboardTabView: View {
                     RoundedRectangle(cornerRadius: 10)
                         .stroke(Color(hex: "ECE9D4"), lineWidth: 1)
                 )
-                .padding()
+                .padding(.vertical)
                 
-                // Title and Text Content
+        
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Tittle hej hej")
+                    Text("Stay Informed")
                         .font(.title2)
                         .bold()
                     
@@ -117,30 +81,18 @@ struct DashboardTabView: View {
                         .foregroundColor(.black)
                 }
                 .padding(.horizontal)
+                .padding(.vertical, 10)
                 
-                // Dashboard Button
+          
                 Button(action: {
-                    print("Dashboard button")
+                    print("Add New Data")
                 }) {
                     HStack {
-                        ZStack {
-                            Circle()
-                                .fill(Color.white)
-                                .frame(width: 30, height: 30)
-                            
-                            Image(systemName: "tray.2.fill")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 17, height: 17)
-                                .foregroundColor(.black)
-                        }
-                        .padding(.leading, 10)
+                       
                         
-                        Text("Dashboard")
+                        Text("Add New Data")
                             .font(.headline)
                             .foregroundColor(.white)
-                        
-                        Spacer()
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
@@ -148,37 +100,15 @@ struct DashboardTabView: View {
                     .cornerRadius(10)
                 }
                 .padding(.horizontal)
-                
-                //Dashboard Button slut
-                
-                
-                //Test Button
-                Button(action: {
-                    print("Test button")
-                }) {
-                    HStack {
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: 30, height: 30)
-                            .padding(.leading, 10)
-                        
-                        Text("Test ")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                        
-                        Spacer()
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color(hex: "F5C87E"))
-                    .cornerRadius(10)
-                }
-                .padding()
-                
-            }         //Test Button slut
+                .padding(.vertical, 10)
+            }
         }
+        .padding()
+        Spacer()
+            .frame(height: 100)
     }
 }
+
 #Preview {
     DashboardTabView(isLocked: .constant(true))
 }

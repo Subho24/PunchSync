@@ -13,7 +13,9 @@ struct LoginView: View {
     
     @State var email = ""
     @State var password = ""
-    @State var errorMessage = ""
+    @State var emailErrorMessage = ""
+    @State var passwordErrorMessage = ""
+    @State var generalErrorMessage = ""
     
     @State var showForgotPassword = false
     
@@ -32,16 +34,26 @@ struct LoginView: View {
                         .padding(.vertical, 50)
                     
                     TextFieldView(placeholder: "Email", text: $email, isSecure: false, systemName: "envelope", onChange: {
-                        errorMessage = ""
+                        emailErrorMessage = ""
+                        generalErrorMessage = ""
                     })
                     
+                    ErrorMessageView(errorMessage: emailErrorMessage, height: 15)
+                    
                     TextFieldView(placeholder: "Password", text: $password, isSecure: true, systemName: "lock", onChange: {
-                        errorMessage = ""
+                        passwordErrorMessage = ""
+                        generalErrorMessage = ""
                     })
+                    
+                    ErrorMessageView(errorMessage: passwordErrorMessage, height: 15)
                     
                     HStack {
                         Spacer()
                         Button(action: {
+                            emailErrorMessage = ""
+                            passwordErrorMessage = ""
+                            generalErrorMessage = ""
+                            password = ""
                             showForgotPassword.toggle()
                         }) {
                             Text("Forgot Password")
@@ -49,15 +61,16 @@ struct LoginView: View {
                     }
                     .padding(.trailing, 45)
                     
-                    ErrorMessageView(errorMessage: errorMessage)
+                    ErrorMessageView(errorMessage: generalErrorMessage)
                     
                     VStack {
                         Button(action: {
-                            if let validationError = ValidationUtils.validateLogin(email: email, password: password) {
-                                errorMessage = validationError
-                            } else {
+                            emailErrorMessage = ValidationUtils.validateEmail(email: email) ?? ""
+                            passwordErrorMessage = ValidationUtils.validatePassword(password: password) ?? ""
+                            
+                            if emailErrorMessage.isEmpty && passwordErrorMessage.isEmpty {
                                 punchsyncfb.userLogin(email: email, password: password) { firebaseError in
-                                    errorMessage = firebaseError ?? "" // Default to empty string if no Firebase error
+                                    generalErrorMessage = firebaseError ?? "" // Default to empty string if no Firebase error
                                 }
                             }
                         }) {

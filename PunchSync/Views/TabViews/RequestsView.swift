@@ -14,16 +14,10 @@ struct RequestsView: View {
     @State private var leaveRequests: [LeaveRequest] = []
     
     var body: some View {
-        
+    
         VStack {
-            HStack(spacing: 50) {
-                Circle()
-                    .fill(Color(hex: "ECE9D4"))
-                    .frame(width: 80, height: 80)
-                    .overlay(Circle().stroke(Color.white, lineWidth: 2))
-                    .shadow(radius: 5)
-                    .padding(.bottom, 5)
-                
+            HStack(spacing: 20) {
+                ProfileImage()
                 VStack {
                     Text("Admin: \(adminData.fullName)")
                         .font(.headline)
@@ -40,44 +34,63 @@ struct RequestsView: View {
                     await loadAllData()
                 }
             }
+            
         
             HStack {
                 Text("Leave Requests")
-                    .font(.title3)
+                           .font(.largeTitle)
+                           .fontWeight(.bold)
+                           .foregroundColor(.black)
+                           .padding(.top, 20)
+                           .padding(.bottom, 10)
                 Spacer()
             }
             .padding()
             
             List {
                 ForEach(leaveRequests, id: \.id) { LeaveRequest in
-                    Text("\(LeaveRequest.requestType)")
+                    HStack {
+                        Text("\(LeaveRequest.employeeName)")
+                            .foregroundColor(Color.white)
+                        Spacer()
+                        Text("\(LeaveRequest.requestType)")
+                    }
                 }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color(hex: "8BC5A3"))
+                )
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 0))
             }
+            .scrollContentBackground(.hidden)
         }
         .padding(.bottom, 30)
     }
     
     private func loadAllData() async {
-        await withCheckedContinuation { continuation in
-            punchsyncfb.loadAdminData(adminData: adminData) { success, error in
-                if success {
-                    punchsyncfb.loadLeaveRequests { [self] leaveRequests, error in
-                        if let error = error {
-                            print("Failed to load leave requests: \(error)")
-                        } else if let loadedRequests = leaveRequests {
-                            // Update the state variable on the main thread
-                            DispatchQueue.main.async {
-                                self.leaveRequests = loadedRequests
-                            }
-                        }
-                        continuation.resume()
-                    }
-                } else {
-                    continuation.resume()
-                }
-            }
-        }
-    }
+       await withCheckedContinuation { continuation in
+           punchsyncfb.loadAdminData(adminData: adminData) { success, error in
+               if success {
+                   // När adminData är laddat, ladda leaveRequests
+                   let companyCode = adminData.companyCode
+                   punchsyncfb.loadLeaveRequests(forCompanyCode: companyCode) { leaveRequests, error in
+                       if let error = error {
+                           print("Failed to load leave requests: \(error)")
+                       } else if let loadedRequests = leaveRequests {
+                           DispatchQueue.main.async {
+                               self.leaveRequests = loadedRequests
+                           }
+                       }
+                   }
+               } else if let error = error {
+                   print("Failed to load admin data: \(error.localizedDescription)")
+               }
+               continuation.resume()
+           }
+       }
+   }
 }
 
 #Preview {

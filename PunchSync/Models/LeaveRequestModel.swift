@@ -14,6 +14,7 @@ struct LeaveRequest: Identifiable {
     var description: String
     var startDate: Date
     var endDate: Date
+    let employeeName: String
 }
 
 extension LeaveRequest {
@@ -23,7 +24,8 @@ extension LeaveRequest {
             "requestType": requestType,
             "description": description,
             "startDate": startDate.timeIntervalSince1970,
-            "endDate": endDate.timeIntervalSince1970
+            "endDate": endDate.timeIntervalSince1970,
+            "employeeName": employeeName
         ]
     }
 }

@@ -4,123 +4,117 @@
 //
 //  Created by Arlinda Islami on 2025-01-08.
 //
+
 import SwiftUI
-import FirebaseAuth
 import Firebase
 
 struct AddScheduleView: View {
     @Binding var schedules: [String: [Schedule]]
     @Binding var selectedDate: Date
     @State private var selectedEmployee: String = ""
-    @State private var shiftStartTime: Date = Date()
-    @State private var shiftEndTime: Date = Date()
-    @StateObject private var adminData = AdminData()
-    @State var punchsyncfb = PunchSyncFB()
     @State private var employees: [EmployeeData] = []
-    @State private var isLoading = true
-    
+    @State private var startTime: Date = Date()
+    @State private var endTime: Date = Date()
+    @State var punchsyncfb = PunchSyncFB()
+
     let companyCode: String
-    let userId: String
-    
+
+    @Environment(\.presentationMode) var presentationMode
+
     var body: some View {
         NavigationView {
             Form {
-                // DropDown për zgjedhjen e punonjësit
-                Section(header: Text("Select Employee")) {
-                    Picker("Employee", selection: $selectedEmployee) {
+                Section(header: Text("Employee")) {
+                    Picker("Select Employee", selection: $selectedEmployee) {
                         ForEach(employees) { employee in
-                            Text(employee.fullName)
+                            Text(employee.fullName).tag(employee.fullName)
                         }
                     }
                     .pickerStyle(WheelPickerStyle())
+                    .onChange(of: selectedEmployee) { newValue in
+                        // Perform any action when employee selection changes
+                    }
                 }
-                
-                // Zgjedhja e orarit të fillimit dhe përfundimit
-                Section(header: Text("Select Shift Times")) {
-                    DatePicker("Start Time", selection: $shiftStartTime, displayedComponents: .hourAndMinute)
-                        .datePickerStyle(CompactDatePickerStyle())
-                    
-                    DatePicker("End Time", selection: $shiftEndTime, displayedComponents: .hourAndMinute)
-                        .datePickerStyle(CompactDatePickerStyle())
+
+                Section(header: Text("Shift Timing")) {
+                    DatePicker("Start Time", selection: $startTime, displayedComponents: .hourAndMinute)
+                    DatePicker("End Time", selection: $endTime, displayedComponents: .hourAndMinute)
                 }
             }
             .navigationTitle("Add Schedule")
             .navigationBarItems(
-                leading: Button("Cancel") {
-                    dismissView()
-                },
-                trailing: Button("Save") {
-                    saveSchedule() 
-                }
+                leading: Button("Cancel") { dismiss() },
+                trailing: Button("Save") { saveSchedule() }.disabled(selectedEmployee.isEmpty)
             )
-            .task {
-                punchsyncfb.loadAdminData(adminData: adminData) { success, error in
-                    if success {
-                        print("Admin data loaded successfully")
-                        
-                        punchsyncfb.loadEmployees(for: adminData.companyCode) { loadedEmployees, error in
-                            if let loadedEmployees = loadedEmployees {
-                                DispatchQueue.main.async {
-                                    self.employees = loadedEmployees
-                                    self.isLoading = false
-                                }
-                                print("Employees loaded: \(loadedEmployees)")
-                            } else if let error = error {
-                                print("Error loading employees: \(error.localizedDescription)")
-                            }
-                        }
-                    } else if let error = error {
-                        print("Error loading admin data: \(error.localizedDescription)")
-                    }
+            .onAppear(perform: loadEmployeesData)
+        }
+    }
+
+    private func loadEmployeesData() {
+        punchsyncfb.loadEmployees(for: companyCode) { employees, error in
+            if let error = error {
+                print("Error loading employees: \(error.localizedDescription)")
+            } else if let employees = employees {
+                self.employees = employees
+
+                // Cakto vlerën e parë si të përzgjedhur nëse nuk ka vlerë fillestare
+                if self.selectedEmployee.isEmpty, let firstEmployee = employees.first {
+                    self.selectedEmployee = firstEmployee.fullName
                 }
             }
         }
     }
-    
+
     private func saveSchedule() {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
-        
-        let formattedStartTime = formatter.string(from: shiftStartTime)
-        let formattedEndTime = formatter.string(from: shiftEndTime)
-        
-        let newSchedule = Schedule(
-            id: UUID().uuidString,
-            employee: selectedEmployee,
-            startTime: formattedStartTime,
-            endTime: formattedEndTime
-        )
-        
-        // Ruajmë në Firebase
-        let databaseRef = Database.database().reference()
-        let scheduleRef = databaseRef.child("schedules").child(companyCode).child(userId).childByAutoId()
-        scheduleRef.setValue([
-            "employee": newSchedule.employee,
-            "startTime": newSchedule.startTime,
-            "endTime": newSchedule.endTime
-        ]) { error, _ in
+        // Gjej punonjësin e përzgjedhur në listën e ngarkuar të punonjësve për të marrë personalSecurityNumber
+        guard let selectedEmployeeData = employees.first(where: { $0.fullName == selectedEmployee }) else {
+            print("Error: Employee not found")
+            return
+        }
+
+        // Referenca kryesore për të ruajtur të dhënat
+        let schedulesRef = Database.database()
+            .reference()
+            .child("schedules")
+            .child(companyCode)
+            .child(formattedDate(date: selectedDate))
+            .child(selectedEmployeeData.personalNumber) // Përdor personalSecurityNumber si çelës
+
+        // Gjenero një çelës unik për regjistrimin e ri brenda personalSecurityNumber
+        let newScheduleRef = schedulesRef.childByAutoId()
+
+        let scheduleData: [String: Any] = [
+            "employeeName": selectedEmployee,
+            "startTime": formatTime(date: startTime),
+            "endTime": formatTime(date: endTime)
+        ]
+
+        // Ruaj të dhënat në Firebase
+        newScheduleRef.setValue(scheduleData) { error, _ in
             if let error = error {
                 print("Error saving schedule: \(error.localizedDescription)")
             } else {
-                print("Schedule saved successfully")
-                DispatchQueue.main.async {
-                    let dateKey = String(newSchedule.startTime.prefix(10)) // YYYY-MM-DD
-                    if schedules[dateKey] != nil {
-                        schedules[dateKey]?.append(newSchedule)
-                    } else {
-                        schedules[dateKey] = [newSchedule]
-                    }
-                    dismissView()
-                }
+                print("Schedule saved successfully.")
+                dismiss()
             }
         }
     }
-    
-    private func dismissView() {
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-            if let window = windowScene.windows.first {
-                window.rootViewController?.dismiss(animated: true)
-            }
-        }
+
+
+    private func dismiss() {
+        // Kthimi në pamjen e "ScheduleView" dhe përditësimi automatik i listës
+        self.presentationMode.wrappedValue.dismiss()
+    }
+
+    private func formattedDate(date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
+    }
+
+    private func formatTime(date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
+        return formatter.string(from: date)
     }
 }

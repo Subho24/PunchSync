@@ -9,71 +9,141 @@ import SwiftUI
 import Firebase
 
 struct HomeView: View {
+    var isAdmin: Bool
     
     @State var punchsyncfb = PunchSyncFB()
     @State private var isLocked: Bool = false
+    @State private var isReady: Bool = false
     
-    init() {
-        // This ensures that the TabBar has the correct background color
-        let appearance = UITabBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor(hex: "#E0E2C1")
-        UITabBar.appearance().standardAppearance = appearance
-        UITabBar.appearance().scrollEdgeAppearance = appearance
-    }
     
-      var body: some View {
-          
-          HStack {
-              Spacer()
-              Button(action: {
-                  punchsyncfb.userLogout()
-              }) {
-                  Text("Sign out")
-                      .font(.headline)
-                      .foregroundColor(.red)
-                      .padding(.horizontal, 10)
-                      .padding(.vertical, 5)
-                      .background(Color(hex: "ECE9D4"))
-                      .cornerRadius(10)
-              }
-          }
-          
-          TabView {
-              // Dashboard Tab
-              VStack {
-                  DashboardTabView(isLocked: $isLocked)
-              }
-              .tabItem {
-                VStack {
-                  Image(systemName: "tray.2.fill")
-                  Text("Dashboard")
+    init(isAdmin: Bool) {
+        
+        self.isAdmin = isAdmin
+         let appearance = UITabBarAppearance()
+         appearance.backgroundColor = UIColor(Color(hex: "B5D8C3")) // Ngjyra pastel blu për sfondin
+         
+         // Ngjyra për tab-et jo aktive
+         appearance.stackedLayoutAppearance.normal.iconColor = UIColor(Color(hex: "FFFFFF")) // Gri e zbehtë për ikonat jo aktive
+         appearance.stackedLayoutAppearance.normal.titleTextAttributes = [
+             .foregroundColor: UIColor(Color(hex: "FFFFFF")) // Gri e zbehtë për tekstin jo aktiv
+         ]
+         UITabBar.appearance().standardAppearance = appearance
+         if #available(iOS 15.0, *) {
+             UITabBar.appearance().scrollEdgeAppearance = appearance
+         }
+     }
+
+    var body: some View {
+        
+        if !isReady {
+            ProgressView("Loading...")
+                .onAppear {
+                    // Small delay to ensure state is ready
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        isReady = true
+                    }
                 }
-              }
-              // Check In / Out Tab
-              VStack {
-                  Check_in_out(isLocked: $isLocked)
-              }
-              .tabItem {
-                VStack {
-                  Image(systemName: "clock")
-                  Text("Check In / Out")
+        } else {
+            
+            HStack {
+                Spacer()
+                Button(action: {
+                    punchsyncfb.userLogout()
+                }) {
+                    Text("Sign out")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 5)
+                        .background(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color(hex: "FE7E65"),
+                                    Color(hex: "E58D35"),
+                                    Color(hex: "FD9709")
+                                ]),
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .cornerRadius(10)
                 }
-              }
-              // More Tab
-              VStack {
-              MoreTabView(isLocked: $isLocked)
-              }
-              .tabItem {
-                VStack {
-                  Image(systemName: "list.dash")
-                  Text("More")
-                }
-              }
             }
-           .accentColor(Color.black) // Active Tab
-          }
+            
+            if isAdmin {
+                TabView {
+                    // Dashboard Tab
+                    VStack {
+                        DashboardTabView(isLocked: $isLocked)
+                    }
+                    .tabItem {
+                        VStack {
+                            Image(systemName: "tray.2.fill")
+                            Text("Dashboard")
+                        }
+                    }
+                    // Check In / Out Tab
+                    VStack {
+                        Check_in_out(isLocked: $isLocked)
+                    }
+                    .tabItem {
+                        VStack {
+                            Image(systemName: "clock")
+                            Text("Check In / Out")
+                        }
+                    }
+                    // More Tab
+                    VStack {
+                        MoreTabView(isLocked: $isLocked)
+                    }
+                    .tabItem {
+                        VStack {
+                            Image(systemName: "list.dash")
+                            Text("More")
+                        }
+                    }
+                }
+                .accentColor(Color(hex: "283B34")) // Active Tab
+            } else {
+                TabView {
+                    // Schedule View
+                    VStack {
+                        EmployeeScheduleView()
+                    }
+                    .tabItem {
+                        VStack {
+                            Image(systemName: "calendar")
+                            Text("Schedule")
+                        }
+                    }
+                    // Attest View
+                    VStack {
+                        EmployeeAttestView()
+                    }
+                    .tabItem {
+                        VStack {
+                            Image(systemName: "clock")
+                            Text("Attest")
+                        }
+                    }
+                    // More Tab
+                    VStack {
+                        EmployeeMoreTabView()
+                    }
+                    .tabItem {
+                        VStack {
+                            Image(systemName: "list.dash")
+                            Text("More")
+                        }
+                    }
+                }
+                .accentColor(Color(hex: "283B34")) // Active Tab
+            }
         }
+        
+    }
+}
+          
 
     extension UIColor {
       // Function to convert HEX color to UIColor
@@ -90,5 +160,5 @@ struct HomeView: View {
 }
 
 #Preview {
-    HomeView()
+    HomeView(isAdmin: false) // Eller false för att testa olika scenarier
 }
