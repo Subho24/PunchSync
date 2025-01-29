@@ -77,6 +77,7 @@ class AttestViewModel: ObservableObject { // Make AttestView conform to Observab
                 self.allAttestData = attestData
             }
         }
+    
     }
 
     func fetchUserData(completion: @escaping ([String: String]) -> Void) {
@@ -178,6 +179,7 @@ struct AttestView: View {
                     DateAttestSection(dateString: viewModel.convertDateToString(date: dateString))
                 }
             }
+            .padding(.bottom, 80)
         }
         .onAppear {
             viewModel.getEarliestPunchDate { earliestDate in
@@ -199,6 +201,7 @@ struct AttestView: View {
                 print("No admin is currently logged in")
                 return
             }
+            print(viewModel.allDatesArray, "Dates here")
             print((Auth.auth().currentUser?.uid)!)
         }
     }
@@ -213,19 +216,17 @@ struct AttestHeaderView: View {
                 .font(.title)
                 .bold()
         }
-        .padding(.top, 50)
-        .padding(.leading, 30)
-        .frame(maxWidth: .infinity, minHeight: 120)
-        .background(Color(hex: "ECE9D4"))
+        //.padding(.top, 50)
+        //.padding(.leading, 30)
+        .frame(maxWidth: .infinity, minHeight: 80)
+        //.background(Color(hex: "ECE9D4"))
     }
 }
 
 struct DateAttestSection: View {
     var dateString: String
-    @EnvironmentObject var viewModel: AttestViewModel  // Get the ViewModel from the environment
-    
-    
-    
+    @EnvironmentObject var viewModel: AttestViewModel  // Get ViewModel
+
     var body: some View {
         VStack {
             HStack {
@@ -239,22 +240,32 @@ struct DateAttestSection: View {
                 .foregroundColor(.black)
 
             if let attestDataForDate = viewModel.allAttestData[dateString] {
-                ForEach(attestDataForDate.keys.sorted(), id: \.self) { userId in
-                    if let userAttestList = attestDataForDate[userId] {
-                        ForEach(userAttestList.indices, id: \.self) { index in
-                            if userAttestList.indices.contains(index),
-                               let userCompanyCode = userAttestList[index]["companyCode"],
-                               userCompanyCode == viewModel.companyCode
-                               //let approved = userAttestList[index]["approved"], approved == "false" { //Change this to check for company id
-                            {
-                                AttestRecordView(userAttestData: userAttestList[index])
-                            }
-
-                        }
+                let filteredRecords = attestDataForDate.flatMap { (userId, userAttestList) in
+                    userAttestList.filter { userAttestData in
+                        userAttestData["companyCode"] == viewModel.companyCode // Match companyCode
                     }
                 }
+
+                if !filteredRecords.isEmpty {
+                    ForEach(attestDataForDate.keys.sorted(), id: \.self) { userId in
+                        if let userAttestList = attestDataForDate[userId] {
+                            ForEach(userAttestList.indices, id: \.self) { index in
+                                if userAttestList[index]["companyCode"] == viewModel.companyCode
+                                {
+                                    
+                                        AttestRecordView(userAttestData: userAttestList[index])
+                                    
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    Text("No records for this date") // Show message when no matching records
+                        .foregroundColor(.gray)
+                        .padding()
+                }
             } else {
-                Text("No records for this date")
+                Text("No records for this date") // Also show message when no data exists
                     .foregroundColor(.gray)
                     .padding()
             }
@@ -262,6 +273,7 @@ struct DateAttestSection: View {
         .padding(.vertical)
     }
 }
+
 
 struct AttestRecordView: View {
     var userAttestData: [String: String]
@@ -280,29 +292,60 @@ struct AttestRecordView: View {
         let dateString = checkInTime.split(separator: " ")[0]
 
         let ref = Database.database().reference().child("punch_records").child(userId).child(String(dateString))
-        
+
         ref.observeSingleEvent(of: .value) { snapshot in
-            if let record = snapshot.value as? [String: Any] {
-                var updatedRecord = record
-                // Update approval to true
-                updatedRecord["approved"] = "true"
-                
-                // Save the updated record to Firebase
-                ref.updateChildValues(updatedRecord) { error, _ in
+            print("Snapshot value: \(snapshot.value ?? "nil")") // Debugging line
+
+            // Check if the snapshot contains an array of records
+            if let recordsArray = snapshot.value as? [[String: Any]] {
+                // Handle the array structure
+                if var record = recordsArray.first {
+                    // Toggle the approval status
+                    if let approved = record["approved"] as? String, approved == "true" {
+                        record["approved"] = "false"
+                    } else {
+                        record["approved"] = "true"
+                    }
+
+                    // Save the updated record
+                    ref.child("0").updateChildValues(record) { error, _ in
+                        if let error = error {
+                            print("Error updating approval: \(error.localizedDescription)")
+                        } else {
+                            print("Approval toggled successfully!")
+                            isChecked.toggle() // Toggle the local state as well
+                        }
+                    }
+                }
+            }
+            // Check if the snapshot contains a dictionary (non-array structure)
+            else if var record = snapshot.value as? [String: Any] {
+                // Handle the dictionary structure (flat record)
+                // Toggle the approval status
+                if let approved = record["approved"] as? String, approved == "true" {
+                    record["approved"] = "false"
+                } else {
+                    record["approved"] = "true"
+                }
+
+                // Save the updated record
+                ref.updateChildValues(record) { error, _ in
                     if let error = error {
                         print("Error updating approval: \(error.localizedDescription)")
                     } else {
-                        print("Approval updated successfully!")
-                        isChecked.toggle()
+                        print("Approval toggled successfully!")
+                        isChecked.toggle() // Toggle the local state as well
                     }
                 }
             } else {
                 print("No record found or invalid data structure")
             }
         }
-        
-        
     }
+
+
+
+
 
 
 
@@ -358,10 +401,9 @@ struct AttestRecordView: View {
                                 
                             } else {
                                 
-                                
                                 HStack {
-                                    if let checkInTime = userAttestData["checkInTime"],
-                                       let checkInComponents = checkInTime.split(separator: " ").last {
+                                    if  let checkInTime = userAttestData["checkInTime"],
+                                        let checkInComponents = checkInTime.split(separator: " ").last {
                                         Text(String(checkInComponents))
                                     } else {
                                         Text("Invalid Check-In Time")
@@ -400,6 +442,7 @@ struct AttestRecordView: View {
             if let approved = userAttestData["approved"], approved == "true" {
                 isChecked = true
             }
+            print(userAttestData, "data")
         }
     }
 }

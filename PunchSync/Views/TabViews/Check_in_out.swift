@@ -167,6 +167,8 @@ struct Check_in_out: View {
             dateFormatter.locale = Locale(identifier: "en_US_POSIX")
             dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
             
+            print(punchDetails, "I will Fix You")
+            
             // Ensure `checkInTime` exists and parse it
             print(punchDetails["checkInTime"]!)
             guard let checkInTimeString = punchDetails["checkInTime"]?.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -191,6 +193,8 @@ struct Check_in_out: View {
                 let breakEndTime = breakStartTime.addingTimeInterval(30 * 60) // Add 30 minutes
                 punchDetails["breakEndTime"] = dateFormatter.string(from: breakEndTime)
             }
+            
+            print(punchDetails, "Did i fix you?")
         }
         
     func checkInUser(_ personalNummer: String) {
@@ -440,7 +444,7 @@ struct Check_in_out: View {
         let currentDateString = dateFormatter.string(from: Date())
         
         // Fetch all punch records for the user
-        ref.child("punch_records").child(personalNumber).observeSingleEvent(of: .value) { snapshot  in
+        ref.child("punch_records").child(personalNumber).observeSingleEvent(of: .value) { snapshot in
             guard let records = snapshot.value as? [String: Any] else {
                 print("No records found for user \(personalNumber).")
                 return
@@ -450,40 +454,49 @@ struct Check_in_out: View {
             
             for (date, record) in records {
                 // Check if the data is an array or a single record
-                if let recordArray = record as? [[String: String]] {
-                    // If the data is an array, check and update the last record in the array
-                    if let lastRecord = recordArray.last {
-                        var punchData = lastRecord
-                        
-                        // Fix invalid records
-                        if let checkInTime = lastRecord["checkInTime"], !isTimeWithin12Hours(checkInTime, "CheckIn") {
-                            fixPunchRecord(&punchData)
-                        }
-                        
-                        // Update the database with the fixed record
-                        ref.child("punch_records").child(personalNumber).child(date).setValue(recordArray)
-                        
-                        // Check if the user is checked in today
-                        if date == currentDateString {
-                            isTodayCheckedIn = true
-                            
-                            if lastRecord["checkOutTime"] == "" {
-                                checkedIn = true
-                            }
-                            
-                            if lastRecord["breakStartTime"] != "" && lastRecord["breakEndTime"] == "" {
-                                inBreak = true
-                            }
-                        }
-                    }
-                } else if let record = record as? [String: String] {
-                    // If the data is a single record, handle it as before
-                    var punchData = record
+                if var recordArray = record as? [[String: String]], !recordArray.isEmpty {
+                    // If the data is an array, update the last record in place
+                    var punchData = recordArray.last!
                     
-                    // Fix invalid records
-                    if let checkInTime = record["checkInTime"], !isTimeWithin12Hours(checkInTime, "CheckIn") {
+                    if let checkInTime = punchData["checkInTime"], !isTimeWithin12Hours(checkInTime, "CheckIn") {
                         fixPunchRecord(&punchData)
                     }
+                    
+                    if let checkOutTime = punchData["checkOutTime"], !isTimeWithin12Hours(checkOutTime, "CheckOut") {
+                        fixPunchRecord(&punchData)
+                    }
+                    
+                    // Update the last element instead of appending a new one
+                    recordArray[recordArray.count - 1] = punchData
+                    
+                    print(punchData, "Updated record")
+                    print(recordArray, "Updated recordArray")
+                    
+                    ref.child("punch_records").child(personalNumber).child(date).setValue(recordArray)
+                    
+                    // Check if the user is checked in today
+                    if date == currentDateString {
+                        isTodayCheckedIn = true
+                        
+                        if punchData["checkOutTime"] == "" {
+                            checkedIn = true
+                        }
+                        
+                        if punchData["breakStartTime"] != "" && punchData["breakEndTime"] == "" {
+                            inBreak = true
+                        }
+                    }
+                } else if var punchData = record as? [String: String] {
+                    // If the data is a single record, update it
+                    if let checkInTime = punchData["checkInTime"], !isTimeWithin12Hours(checkInTime, "CheckIn") {
+                        fixPunchRecord(&punchData)
+                    }
+                    
+                    if let checkOutTime = punchData["checkOutTime"], !isTimeWithin12Hours(checkOutTime, "CheckOut") {
+                        fixPunchRecord(&punchData)
+                    }
+                    
+                    print(punchData, "Updated single record")
                     
                     // Update the database with the fixed record
                     ref.child("punch_records").child(personalNumber).child(date).setValue(punchData)
@@ -492,31 +505,19 @@ struct Check_in_out: View {
                     if date == currentDateString {
                         isTodayCheckedIn = true
                         
-                        if record["checkOutTime"] == "" {
+                        if punchData["checkOutTime"] == "" {
                             checkedIn = true
                         }
                         
-                        if record["breakStartTime"] != "" && record["breakEndTime"] == "" {
+                        if punchData["breakStartTime"] != "" && punchData["breakEndTime"] == "" {
                             inBreak = true
                         }
                     }
                 }
             }
-            
-            // If no check-in for today, create a new record
-            /*if !isTodayCheckedIn {
-                let punchData: [String: String] = [
-                    "checkInTime": dateTimeFormatter.string(from: Date()),
-                    "checkOutTime": "",
-                    "breakStartTime": "",
-                    "breakEndTime": ""
-                ]
-                ref.child("punch_records").child(personalNumber).child(currentDateString).setValue([punchData])
-                checkedIn = true
-                inBreak = false
-            }*/
         }
     }
+
 
         
         
