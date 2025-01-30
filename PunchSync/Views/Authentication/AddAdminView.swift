@@ -29,7 +29,7 @@ struct AddAdminView: View {
     
     @State var showAlert = false
     
-    @State private var currentAdminPassword: String = ""
+    @Binding var currentAdminPassword: String 
     @State var showAdminForm = false
     
     // Animation States
@@ -44,7 +44,7 @@ struct AddAdminView: View {
                 Spacer()
                 
                 VStack {
-                    LockedView(showAdminForm: $showAdminForm)
+                    LockedView(parentAdminPassword: $currentAdminPassword, showAdminForm: $showAdminForm)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.top, showAdminForm ? 0 : 100)
@@ -140,5 +140,5 @@ struct AddAdminView: View {
 }
 
 #Preview {
-    AddAdminView()
+    AddAdminView(currentAdminPassword: .constant(""))
 }

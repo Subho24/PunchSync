@@ -14,12 +14,13 @@ struct DashboardTabView: View {
     @State var punchsyncfb = PunchSyncFB()
     @Binding var isLocked: Bool
     @State var showAdminForm: Bool = false
+    @State private var unusedPassword: String = ""
  
     var body: some View {
         // Profile Section
         VStack(spacing: 20) {
             if isLocked {
-                LockedView(showAdminForm: $showAdminForm)
+                LockedView(parentAdminPassword: $unusedPassword, showAdminForm: $showAdminForm)
                     .onChange(of: showAdminForm) {
                         withAnimation {
                             isLocked = false
