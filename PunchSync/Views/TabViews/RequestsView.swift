@@ -34,7 +34,6 @@ struct RequestsView: View {
                     await loadAllData()
                 }
             }
-            
         
             HStack {
                 Text("Leave Requests")
@@ -48,12 +47,110 @@ struct RequestsView: View {
             .padding()
             
             List {
-                ForEach(leaveRequests, id: \.id) { LeaveRequest in
-                    HStack {
-                        Text("\(LeaveRequest.employeeName)")
-                            .foregroundColor(Color.white)
-                        Spacer()
-                        Text("\(LeaveRequest.requestType)")
+                // Create a section for each leave type
+                Group {
+                    let annualLeaves = leaveRequests.filter { $0.requestType == "Annual leave" }
+                    if !annualLeaves.isEmpty {
+                        Section(header: Text("Annual leave").foregroundStyle(.white)) {
+                            ForEach(annualLeaves, id: \.id) { leave in
+                                HStack {
+                                    Text(leave.employeeName)
+                                        .foregroundColor(.white)
+                                    Spacer()
+                                }
+                            }
+                        }
+                    }
+                    
+                    let sickLeaves = leaveRequests.filter { $0.requestType == "Sick leave" }
+                    if !sickLeaves.isEmpty {
+                        Section(header: Text("Sick leave").foregroundStyle(.white)) {
+                            ForEach(sickLeaves, id: \.id) { leave in
+                                HStack {
+                                    Text(leave.employeeName)
+                                        .foregroundColor(.white)
+                                    Spacer()
+                                }
+                            }
+                        }
+                    }
+                    
+                    let parentalLeaves = leaveRequests.filter { $0.requestType == "Parental leave" }
+                    if !parentalLeaves.isEmpty {
+                        Section(header: Text("Parental leave").foregroundStyle(.white)) {
+                            ForEach(parentalLeaves, id: \.id) { leave in
+                                HStack {
+                                    Text(leave.employeeName)
+                                        .foregroundColor(.white)
+                                    Spacer()
+                                }
+                            }
+                        }
+                    }
+                    
+                    let unpaidLeaves = leaveRequests.filter { $0.requestType == "Unpaid leave" }
+                    if !unpaidLeaves.isEmpty {
+                        Section(header: Text("Unpaid leave").foregroundStyle(.white)) {
+                            ForEach(unpaidLeaves, id: \.id) { leave in
+                                HStack {
+                                    Text(leave.employeeName)
+                                        .foregroundColor(.white)
+                                    Spacer()
+                                }
+                            }
+                        }
+                    }
+                    
+                    let studyLeaves = leaveRequests.filter { $0.requestType == "Study leave" }
+                    if !studyLeaves.isEmpty {
+                        Section(header: Text("Study leave").foregroundStyle(.white)) {
+                            ForEach(studyLeaves, id: \.id) { leave in
+                                HStack {
+                                    Text(leave.employeeName)
+                                        .foregroundColor(.white)
+                                    Spacer()
+                                }
+                            }
+                        }
+                    }
+                    
+                    let careLeaves = leaveRequests.filter { $0.requestType == "Care leave" }
+                    if !careLeaves.isEmpty {
+                        Section(header: Text("Care leave").foregroundStyle(.white)) {
+                            ForEach(careLeaves, id: \.id) { leave in
+                                HStack {
+                                    Text(leave.employeeName)
+                                        .foregroundColor(.white)
+                                    Spacer()
+                                }
+                            }
+                        }
+                    }
+                    
+                    let specialLeaves = leaveRequests.filter { $0.requestType == "Special leave" }
+                    if !specialLeaves.isEmpty {
+                        Section(header: Text("Special leave").foregroundStyle(.white)) {
+                            ForEach(specialLeaves, id: \.id) { leave in
+                                HStack {
+                                    Text(leave.employeeName)
+                                        .foregroundColor(.white)
+                                    Spacer()
+                                }
+                            }
+                        }
+                    }
+                    
+                    let leaveWithoutPay = leaveRequests.filter { $0.requestType == "Leave without pay" }
+                    if !leaveWithoutPay.isEmpty {
+                        Section(header: Text("Leave without pay").foregroundStyle(.white)) {
+                            ForEach(leaveWithoutPay, id: \.id) { leave in
+                                HStack {
+                                    Text(leave.employeeName)
+                                        .foregroundColor(.white)
+                                    Spacer()
+                                }
+                            }
+                        }
                     }
                 }
                 .padding()
