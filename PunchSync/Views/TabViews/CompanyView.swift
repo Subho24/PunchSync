@@ -27,11 +27,11 @@ struct CompanyView: View {
         VStack(alignment: .leading, spacing: 20) {
     
         Text("Company Details")
-                   .font(.largeTitle)
-                   .fontWeight(.bold)
-                   .foregroundColor(.black)
-                   .padding(.top, 20)
-                   .padding(.bottom, 10)
+            .font(.largeTitle)
+            .fontWeight(.bold)
+            .foregroundColor(Color("SecondaryTextColor"))
+            .padding(.top, 20)
+            .padding(.bottom, 10)
         
             
             // Korniza për Company Code
@@ -42,7 +42,7 @@ struct CompanyView: View {
                   Spacer()
                   Text(companyDetails.companyCode)
                       .font(.body)
-                      .foregroundColor(.gray)
+                      .foregroundColor(Color("PrimaryTextColor"))
               }
               .padding()
               .background(Color.white)
@@ -58,7 +58,7 @@ struct CompanyView: View {
                   Spacer()
                   Text(companyDetails.orgNumber)
                       .font(.body)
-                      .foregroundColor(.gray)
+                      .foregroundColor(Color("PrimaryTextColor"))
               }
               .padding()
               .background(Color.white)
@@ -72,7 +72,7 @@ struct CompanyView: View {
             
               HStack {Text("Company Name:")
                       .font(.headline)
-                      .foregroundColor(.black)
+                      .foregroundColor(Color("SecondaryTextColor"))
                       .padding(.leading, 10) // Përdorim padding për të ndihmuar me distancën
 
                   Spacer()
@@ -81,6 +81,7 @@ struct CompanyView: View {
                         .padding(.vertical)
                         .padding(.leading, 10)
                         .background(Color.white)
+                        .foregroundColor(Color("PrimaryTextColor"))
                         .cornerRadius(10)
                         .overlay(
                             HStack {

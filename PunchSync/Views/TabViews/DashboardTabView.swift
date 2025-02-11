@@ -51,6 +51,7 @@ struct DashboardTabView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color(hex: "ECE9D4"))
+                        .foregroundColor(Color("PrimaryTextColor"))
                         .font(.headline)
                     
                     VStack(spacing: 0) {
@@ -79,7 +80,7 @@ struct DashboardTabView: View {
                     
                     Text("Stay informed with the latest updates and essential information tailored to your needs.")
                         .font(.body)
-                        .foregroundColor(.black)
+                        .foregroundColor(Color("SecondaryTextColor"))
                 }
                 .padding(.horizontal)
                 .padding(.vertical, 10)
@@ -111,5 +112,5 @@ struct DashboardTabView: View {
 }
 
 #Preview {
-    DashboardTabView(isLocked: .constant(true))
+    DashboardTabView(isLocked: .constant(false))
 }
