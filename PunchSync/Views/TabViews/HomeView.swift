@@ -47,14 +47,14 @@ struct HomeView: View {
             
             HStack {
                 Spacer()
+                    .frame(width: 330)
                 Button(action: {
                     punchsyncfb.userLogout()
                 }) {
-                    Text("Sign out")
-                        .font(.headline)
+                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                        .font(.system(size: 20))
                         .foregroundColor(.white)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 5)
+                        .padding(10)
                         .background(
                             LinearGradient(
                                 gradient: Gradient(colors: [
@@ -66,9 +66,12 @@ struct HomeView: View {
                                 endPoint: .trailing
                             )
                         )
-                        .cornerRadius(10)
+                        .cornerRadius(12)
+                        .shadow(color: .gray, radius: 4, x: 2, y: 2)
                 }
+                
             }
+
             
             if isAdmin {
                 TabView {

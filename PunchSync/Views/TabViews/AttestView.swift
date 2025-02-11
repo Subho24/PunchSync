@@ -1,101 +1,151 @@
-//
-//  AttestView.swift
-//  PunchSync
-//
-//  Created by Arlinda Islami on 2024-12-20.
-//
-
 import SwiftUI
 import Firebase
 import FirebaseAuth
 
-struct AttestView: View { // Make the data display properly. Create a function to get user name using the personnummer. Create a loop if a same user has multiple attests on the same day
+class AttestViewModel: ObservableObject { // Make AttestView conform to ObservableObject
+
+    @Published var isChecked: Bool = false
+    @Published var earliestPunchDate: String = ""
+    @Published var allDatesArray: [Date] = []
+    @Published var allAttestData: [String: [String: [[String: String]]]] = [:]
+    @Published var punchRecords: [String: Any] = [:]
+    @Published var companyCode: String?
+
     
-    @State private var isChecked: Bool = false
-    @State private var earliestPunchDate: String = ""
-    @State private var allDatesArray: [Date] = []
-    @State private var allAttestData: [String: [String: [String: String]]] = [:]
-    @State private var punchRecords: [String: Any] = [:]
+    
+    // MARK: - Helper Methods
+    
+    func fetchCompanyCode() {
+        guard let currentAdminId = Auth.auth().currentUser?.uid else {
+            print("No admin is logged in")
+            return
+        }
+        
+        getCompanyCode(currentAdminId) { companyCode in
+            DispatchQueue.main.async {
+                self.companyCode = companyCode
+            }
+        }
+    }
+
+    
+    func getCompanyCode(_ userId: String, completion: @escaping (String?) -> Void) {
+        let ref = Database.database().reference()
+
+        ref.child("users").child(userId).observeSingleEvent(of: .value) { snapshot in
+            if let value = snapshot.value as? [String: Any],
+               let companyCode = value["companyCode"] as? String {
+                completion(companyCode)
+                print(companyCode)
+            } else {
+                completion(nil) // Return nil if companyCode is not found
+            }
+        }
+    }
 
     
     func generateDateArray(from startDateString: String, punchRecords: [String: Any]) {
-           let dateFormatter = DateFormatter()
-           dateFormatter.dateFormat = "yyyy-MM-dd"
-           
-           // Convert input string to Date
-           guard let startDate = dateFormatter.date(from: startDateString) else {
-               return
-           }
-           
-           let calendar = Calendar.current
-           var dates: [Date] = []
-           var current = startDate
-           let currentDate = Date()
-           
-           // Generate the array of dates
-           while current <= currentDate {
-               dates.append(current)
-               if let nextDay = calendar.date(byAdding: .day, value: 1, to: current) {
-                   current = nextDay
-               } else {
-                   break
-               }
-           }
-           
-           // Transform punchRecords into required format
-           var attestData: [String: [String: [String: String]]] = [:]
-           
-           for (userId, records) in punchRecords {
-               if let userRecords = records as? [String: Any] {
-                   for (date, punches) in userRecords {
-                       if let punchDetails = punches as? [String: String] {
-                           if attestData[date] == nil {
-                               attestData[date] = [:]
-                           }
-                           attestData[date]?[userId] = punchDetails
-                       } else if let punchList = punches as? [[String: String]] {
-                           // If multiple punches exist for the same date, merge them
-                           for punch in punchList {
-                               if attestData[date] == nil {
-                                   attestData[date] = [:]
-                               }
-                               attestData[date]?[userId] = punch
-                           }
-                       }
-                   }
-               }
-           }
-           
-           // Update state variables on the main thread
-           DispatchQueue.main.async {
-               allDatesArray = dates
-               allAttestData = attestData
-           }
-       }
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        
+        guard let startDate = dateFormatter.date(from: startDateString) else { return }
+        
+        let calendar = Calendar.current
+        var dates: [Date] = []
+        var current = startDate
+        let currentDate = Date()
+        
+        while current <= currentDate {
+            dates.append(current)
+            if let nextDay = calendar.date(byAdding: .day, value: 1, to: current) {
+                current = nextDay
+            } else {
+                break
+            }
+        }
+        
+        var attestData: [String: [String: [[String: String]]]] = [:]
+        
+        // Fetch user data from Firebase
+        fetchUserData { userFullNames in
+            // Process punchRecords and add fullName
+            self.processPunchRecords(punchRecords, userFullNames: userFullNames, attestData: &attestData)
+            
+            // Update state variables on the main thread
+            DispatchQueue.main.async {
+                self.allDatesArray = dates
+                self.allAttestData = attestData
+            }
+        }
     
+    }
+
+    func fetchUserData(completion: @escaping ([String: String]) -> Void) {
+        var userFullNames: [String: String] = [:]
+        
+        let ref = Database.database().reference()
+        ref.child("users").observeSingleEvent(of: .value) { snapshot in
+            if let value = snapshot.value as? [String: Any] {
+                for (_, userData) in value {
+                    if let userDict = userData as? [String: Any],
+                       let personNumber = userDict["personalSecurityNumber"] as? String,
+                       let fullName = userDict["fullName"] as? String {
+                        // Store mapping of personalNumber -> fullName
+                        userFullNames[personNumber] = fullName
+                    }
+                }
+            }
+            completion(userFullNames)
+        }
+    }
+
+    func processPunchRecords(_ punchRecords: [String: Any], userFullNames: [String: String], attestData: inout [String: [String: [[String: String]]]]) {
+        for (userId, records) in punchRecords {
+            if let userRecords = records as? [String: Any] {
+                for (date, punches) in userRecords {
+                    if attestData[date] == nil {
+                        attestData[date] = [:]
+                    }
+                    
+                    let fullName = userFullNames[ValidationUtils.formatPersonalNumber(userId)] ?? "Unknown"
+                    
+                    if let punchDetails = punches as? [String: String] {
+                        var punchData = punchDetails
+                        punchData["fullName"] = fullName // Add fullName
+                        punchData["userId"] = userId
+                        attestData[date]?[userId] = [punchData]
+                    } else if let punchList = punches as? [[String: String]] {
+                        var updatedPunchList = punchList.map { punch in
+                            var newPunch = punch
+                            newPunch["fullName"] = fullName // Add fullName
+                            newPunch["userId"] = userId
+                            return newPunch
+                        }
+                        attestData[date]?[userId] = updatedPunchList
+                    }
+                }
+            }
+        }
+    }
+
     func getEarliestPunchDate(completion: @escaping (String?) -> Void) {
         let ref = Database.database().reference().child("punch_records")
         
         ref.observeSingleEvent(of: .value) { snapshot in
-            
-            // Extract the data from the snapshot and store it in punchRecords
             if let value = snapshot.value as? [String: Any] {
                 self.punchRecords = value
             }
             
             var dates: [String] = []
             
-            // Iterate through each user (like "199103151180")
-            for (userId, userData) in punchRecords {
+            for (userId, userData) in self.punchRecords {
                 if let userPunchData = userData as? [String: Any] {
-                    // Iterate through the dates for each user
                     for (date, _) in userPunchData {
                         dates.append(date)
                     }
                 }
             }
             
-            // Find the earliest date
             let earliestDate = dates.sorted().first
             completion(earliestDate)
         }
@@ -103,142 +153,299 @@ struct AttestView: View { // Make the data display properly. Create a function t
     
     func convertDateToString(date: Date) -> String {
         let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"  // Use the format that matches your data
+        dateFormatter.dateFormat = "yyyy-MM-dd"
         return dateFormatter.string(from: date)
     }
     
-    func getUserInfo(_ personnummer: String) -> String {
-        print(Auth.auth().currentUser)
-        var ref = Database.database().reference()
-        
-        ref.child("users").observeSingleEvent(of: .value) { snapshot in
-            if let value = snapshot.value as? [String: Any] {
-                for (user, userData) in value {
-                    print(user, "user")
-                    print(userData, "data")
-                }
-            }
-        }
-        return ""
+    func convertStringToDate(_ dateString: String) -> Date? {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.date(from: dateString)
     }
+}
 
+struct AttestView: View {
 
-
-
-
-
+    @StateObject var viewModel = AttestViewModel()  // Use @StateObject to initialize the ViewModel
     
+    // MARK: - User Interface Components
+
     var body: some View {
         VStack {
-            VStack {
-                Text("Attests")
-            }
-            .padding(.top, 50)
-            .padding(.leading, 30)
-            .frame(maxWidth: .infinity, minHeight: 120)
-            .background(Color(hex: "ECE9D4"))
+            AttestHeaderView()
             
             ScrollView {
-                ForEach(allDatesArray, id: \.self) { date in
-                    VStack {
-                        VStack {
-                            HStack {
-                                // Ensure the date is a String or Date, then format it as needed
-                                if let dateObject = date as? Date {
-                                    let formattedDate = convertDateToString(date: dateObject)
-                                    Text(formattedDate)
-                                } else if let stringDate = date as? String {
-                                    Text(stringDate)
-                                } else {
-                                    Text("Invalid date")
-                                }
-                                Spacer()
-                            }
-                            .padding()
-                            Rectangle()
-                                .frame(width: .infinity, height: 1)
-                                .foregroundColor(.black)
-                            
-                            // Convert date to string for accessing allAttestData
-                            let dateString = convertDateToString(date: date as? Date ?? Date())
-                            
-                            // Check if data exists for the current date (converted to string)
-                            if let attestDataForDate = allAttestData[dateString] {
-                                // Data exists for this date, display it
-                                ForEach(attestDataForDate.keys.sorted(), id: \.self) { userId in
-                                    if let userAttestData = attestDataForDate[userId] {
-                                        VStack {
-                                            
-                                            VStack {
-                                                Rectangle()
-                                                    .fill(Color(hex: "8BC5A3")) // Background color
-                                                    .frame(height: 80) // Set fixed height for each attest entry
-                                                    .cornerRadius(20)
-                                                    .overlay(
-                                                        HStack {
-                                                            Spacer()
-                                                            VStack {
-                                                                Text("User ID: \(userId)")
-                                                                    .foregroundColor(.white)
-                                                                Text("Check-In: \(userAttestData["checkInTime"] ?? "N/A")")
-                                                                    .foregroundColor(.white)
-                                                                Text("Check-Out: \(userAttestData["checkOutTime"] ?? "N/A")")
-                                                                    .foregroundColor(.white)
-                                                            }
-                                                            Spacer()
-                                                            Button(action: {
-                                                                isChecked.toggle()
-                                                            }) {
-                                                                Image(systemName: isChecked ? "checkmark.square.fill" : "circle")
-                                                                    .resizable()
-                                                                    .frame(width: 30, height: 30)
-                                                                    .foregroundColor(isChecked ? Color(hex: "36906B") : Color.black)
-                                                                    .background(Color.white)
-                                                                    .clipShape(Circle())
-                                                            }
-                                                            .padding(20)
-                                                        }
-                                                    )
-                                            }
-                                        }
-                                        .padding([.leading, .trailing], 10)
-                                    }
-                                }
-                            } else {
-                                // No data for this date, display a placeholder
-                                Text("No records for this date")
-                                    .foregroundColor(.gray)
-                                    .padding()
-                            }
-                        }
-                        .frame(maxWidth: .infinity) // Allow it to stretch horizontally
-                    }
-                    .padding(.vertical) // Add vertical padding between each date's VStack to prevent overlap
+                ForEach(viewModel.allDatesArray, id: \.self) { dateString in
+                    DateAttestSection(dateString: viewModel.convertDateToString(date: dateString))
                 }
-
-                
-
-
             }
-            
+            .padding(.bottom, 80)
         }
-        .onAppear{
-            getEarliestPunchDate { earliestDate in
+        .onAppear {
+            viewModel.getEarliestPunchDate { earliestDate in
                 if let date = earliestDate {
-                    earliestPunchDate = date
+                    viewModel.earliestPunchDate = date
                     print("Earliest Punch Record Date: \(date)")
-                    generateDateArray(from: date, punchRecords: punchRecords) // Now we call generateDateArray AFTER setting earliestPunchDate
+                    viewModel.generateDateArray(from: date, punchRecords: viewModel.punchRecords)
                 } else {
                     print("No date")
                 }
             }
-            getUserInfo("20020246656")
+            
+            viewModel.fetchCompanyCode()
         }
         .ignoresSafeArea()
+        .environmentObject(viewModel)  // Pass the ViewModel to the environment
+        .onAppear {
+            guard let currentAdmin = Auth.auth().currentUser else {
+                print("No admin is currently logged in")
+                return
+            }
+            print(viewModel.allDatesArray, "Dates here")
+            print((Auth.auth().currentUser?.uid)!)
+        }
+    }
+}
+
+// MARK: - Custom Components
+
+struct AttestHeaderView: View {
+    var body: some View {
+        VStack {
+            Text("Attests")
+                .font(.title)
+                .bold()
+        }
+        //.padding(.top, 50)
+        //.padding(.leading, 30)
+        .frame(maxWidth: .infinity, minHeight: 80)
+        //.background(Color(hex: "ECE9D4"))
+    }
+}
+
+struct DateAttestSection: View {
+    var dateString: String
+    @EnvironmentObject var viewModel: AttestViewModel  // Get ViewModel
+
+    var body: some View {
+        VStack {
+            HStack {
+                Text(dateString)
+                Spacer()
+            }
+            .padding()
+
+            Rectangle()
+                .frame(maxWidth: .infinity, maxHeight: 1)
+                .foregroundColor(.black)
+
+            if let attestDataForDate = viewModel.allAttestData[dateString] {
+                let filteredRecords = attestDataForDate.flatMap { (userId, userAttestList) in
+                    userAttestList.filter { userAttestData in
+                        userAttestData["companyCode"] == viewModel.companyCode // Match companyCode
+                    }
+                }
+
+                if !filteredRecords.isEmpty {
+                    ForEach(attestDataForDate.keys.sorted(), id: \.self) { userId in
+                        if let userAttestList = attestDataForDate[userId] {
+                            ForEach(userAttestList.indices, id: \.self) { index in
+                                if userAttestList[index]["companyCode"] == viewModel.companyCode
+                                {
+                                    
+                                        AttestRecordView(userAttestData: userAttestList[index])
+                                    
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    Text("No records for this date") // Show message when no matching records
+                        .foregroundColor(.gray)
+                        .padding()
+                }
+            } else {
+                Text("No records for this date") // Also show message when no data exists
+                    .foregroundColor(.gray)
+                    .padding()
+            }
+        }
+        .padding(.vertical)
+    }
+}
+
+
+struct AttestRecordView: View {
+    var userAttestData: [String: String]
+    @State private var isChecked: Bool = false
+    @EnvironmentObject var viewModel: AttestViewModel  // Get the ViewModel from the environment
+
+    // The function that will toggle the approval and save it to Firebase
+    func toggleApproval() {
+        guard let checkInTime = userAttestData["checkInTime"],
+              let userId = userAttestData["userId"],
+              let checkOutTime = userAttestData["checkOutTime"] else {
+            print("Missing required data")
+            return
         }
 
-    
+        let dateString = checkInTime.split(separator: " ")[0]
+
+        let ref = Database.database().reference().child("punch_records").child(userId).child(String(dateString))
+
+        ref.observeSingleEvent(of: .value) { snapshot in
+            print("Snapshot value: \(snapshot.value ?? "nil")") // Debugging line
+
+            // Check if the snapshot contains an array of records
+            if let recordsArray = snapshot.value as? [[String: Any]] {
+                // Handle the array structure
+                if var record = recordsArray.first {
+                    // Toggle the approval status
+                    if let approved = record["approved"] as? String, approved == "true" {
+                        record["approved"] = "false"
+                    } else {
+                        record["approved"] = "true"
+                    }
+
+                    // Save the updated record
+                    ref.child("0").updateChildValues(record) { error, _ in
+                        if let error = error {
+                            print("Error updating approval: \(error.localizedDescription)")
+                        } else {
+                            print("Approval toggled successfully!")
+                            isChecked.toggle() // Toggle the local state as well
+                        }
+                    }
+                }
+            }
+            // Check if the snapshot contains a dictionary (non-array structure)
+            else if var record = snapshot.value as? [String: Any] {
+                // Handle the dictionary structure (flat record)
+                // Toggle the approval status
+                if let approved = record["approved"] as? String, approved == "true" {
+                    record["approved"] = "false"
+                } else {
+                    record["approved"] = "true"
+                }
+
+                // Save the updated record
+                ref.updateChildValues(record) { error, _ in
+                    if let error = error {
+                        print("Error updating approval: \(error.localizedDescription)")
+                    } else {
+                        print("Approval toggled successfully!")
+                        isChecked.toggle() // Toggle the local state as well
+                    }
+                }
+            } else {
+                print("No record found or invalid data structure")
+            }
+        }
     }
+
+
+
+
+
+
+
+
+
+
+    var body: some View {
+        VStack {
+            Rectangle()
+                .fill(Color(hex: "8BC5A3"))
+                .frame(height: 80)
+                .cornerRadius(20)
+                .overlay(
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text(userAttestData["fullName"] ?? "Unknown")
+                                .foregroundColor(.white)
+                                .font(.system(size: 20))
+                                .bold()
+                            
+                            
+                            if let breakStartTime = userAttestData["breakStartTime"], !breakStartTime.isEmpty, let breakEndTime = userAttestData["breakEndTime"], !breakEndTime.isEmpty {
+                                
+                                
+                                HStack {
+                                    if let checkInTime = userAttestData["checkInTime"],
+                                       let checkInComponents = checkInTime.split(separator: " ").last {
+                                        Text(String(checkInComponents))
+                                    }
+                                    
+
+                                    if let breakStartTime = userAttestData["breakStartTime"],
+                                       let breakStartComponents = breakStartTime.split(separator: " ").last {
+                                        Text(String(breakStartComponents))
+                                    }
+                                    
+                                }
+                                
+                                HStack {
+                                    if let breakEndTime = userAttestData["breakEndTime"],
+                                       let breakEndComponents = breakEndTime.split(separator: " ").last {
+                                        Text(String(breakEndComponents))
+                                    }
+                                    
+
+                                    if let checkOutTime = userAttestData["checkOutTime"],
+                                       let checkOutComponents = checkOutTime.split(separator: " ").last {
+                                        Text(String(checkOutComponents))
+                                    }
+                                    
+                                }
+                                
+                                
+                            } else {
+                                
+                                HStack {
+                                    if  let checkInTime = userAttestData["checkInTime"],
+                                        let checkInComponents = checkInTime.split(separator: " ").last {
+                                        Text(String(checkInComponents))
+                                    } else {
+                                        Text("Invalid Check-In Time")
+                                    }
+                                    
+
+                                    if let checkOutTime = userAttestData["checkOutTime"],
+                                       let checkOutComponents = checkOutTime.split(separator: " ").last {
+                                        Text(String(checkOutComponents))
+                                    } else {
+                                        Text("Invalid Check-Out Time")
+                                    }
+                                }
+                            }
+                            
+                        }
+                        .padding(20)
+                        Spacer()
+                        Button(action: {
+                            toggleApproval()  // Call the function to toggle the approval status
+                        }) {
+                            Image(systemName: isChecked ? "checkmark.square.fill" : "circle")
+                                .resizable()
+                                .frame(width: 30, height: 30)
+                                .foregroundColor(isChecked ? Color(hex: "36906B") : Color.black)
+                                .background(Color.white)
+                                .clipShape(Circle())
+                        }
+                        .padding(20)
+                    }
+                )
+        }
+        .padding([.leading, .trailing], 10)
+        .onAppear {
+            // If already approved, set the initial state to checked
+            if let approved = userAttestData["approved"], approved == "true" {
+                isChecked = true
+            }
+            print(userAttestData, "data")
+        }
+    }
+}
 
 
 #Preview {

@@ -35,7 +35,9 @@ struct ForgotPasswordView: View {
             .padding(.bottom, 20)
             
             Text("Reset Password")
+                .font(.title2)
                 .padding(.bottom, 50)
+                .foregroundColor(.white)
                 
             TextFieldView(placeholder: "Email", text: $email, systemName: "envelope", onChange: {
                 errorMessage = ""
@@ -75,7 +77,10 @@ struct ForgotPasswordView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: 330)
-        .background(Color("Background"))
+        .background(Color(hex: "B5D8C3"))
+        .cornerRadius(20)
+        .shadow(radius: 10, x: 5, y: 5)
+
     }
 }
 
