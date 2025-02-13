@@ -21,12 +21,13 @@ struct MoreTabView: View {
     
     @Binding var isLocked: Bool
     @State var showAdminForm: Bool = false
+    @State private var unusedPassword: String = ""
  
     
     var body: some View {
         NavigationStack {
             if isLocked {
-                LockedView(showAdminForm: $showAdminForm)
+                LockedView(parentAdminPassword: $unusedPassword, showAdminForm: $showAdminForm)
                 .onChange(of: showAdminForm) {
                     withAnimation {
                         isLocked = false
@@ -65,7 +66,7 @@ struct MoreTabView: View {
                                 ButtonMoreView(title: "Add new admins", icon: "person.2.fill", color: "283B34")
                             }
                             .navigationDestination(isPresented: $navigateToAdminsView) {
-                                AddAdminView(yourcompanyID: adminData.companyCode)
+                                AddAdminView(yourcompanyID: adminData.companyCode, currentAdminPassword: $unusedPassword)
                             }
                             
                             Button(action: {

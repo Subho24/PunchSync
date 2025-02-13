@@ -526,6 +526,7 @@ struct Check_in_out: View {
                             isLocked = true
                         }) {
                             Text(isLocked ? "Locked" : "Lock")
+                                .foregroundColor(Color("SecondaryTextColor"))
                         }
                         Image(systemName: "lock")
                         Spacer()
