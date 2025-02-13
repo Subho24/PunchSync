@@ -18,22 +18,16 @@ struct ScheduleView: View {
     @State private var schedules: [String: [Schedule]] = [:]
     @State private var selectedDate: Date = Date()
     @State private var showAddScheduleView: Bool = false
-    @State private var showDeleteConfirmation: Bool = false
-    @State private var scheduleToDelete: (dateKey: String, scheduleID: String)? = nil
-    @State private var showEditScheduleView: Bool = false
-    @State private var scheduleToEdit: Schedule? = nil
-    @State private var newEmployeeName: String = ""
-    @State private var newStartTime: Date = Date()
-    @State private var newEndTime: Date = Date()
     @StateObject private var adminData = AdminData()
     @State var punchsyncfb = PunchSyncFB()
     @State private var employees: [EmployeeData] = []
+    @State private var showDeleteAlert: Bool = false
+    @State private var scheduleToDelete: Schedule? = nil
 
     var body: some View {
         NavigationView {
             ScrollView {
                 VStack {
-                    // Date Picker
                     DatePicker("Select Date", selection: $selectedDate, displayedComponents: .date)
                         .datePickerStyle(.graphical)
                         .padding(.horizontal)
@@ -41,7 +35,6 @@ struct ScheduleView: View {
 
                     Divider().padding(.horizontal)
 
-                    // Display schedules for selected date
                     if let dailySchedules = schedules[formattedDate(date: selectedDate)] {
                         ForEach(dailySchedules.sorted(by: {
                             convertStringToDate($0.startTime) < convertStringToDate($1.startTime)
@@ -58,25 +51,20 @@ struct ScheduleView: View {
 
                                 Spacer()
 
-                                // Buttons for edit and delete
                                 HStack {
-                                    Button(action: {
-                                        scheduleToEdit = schedule
-                                        newEmployeeName = schedule.employeeName
-                                        newStartTime = convertStringToDate(schedule.startTime)
-                                        newEndTime = convertStringToDate(schedule.endTime)
-                                        showEditScheduleView.toggle()
-                                    }) {
+                     /*               // Edit button (as placeholder)
+                                    Button(action: {}) {
                                         Image(systemName: "pencil")
                                             .foregroundColor(.black)
                                             .padding(8)
                                             .background(Color.blue.opacity(0.2))
                                             .cornerRadius(8)
                                     }
-
+*/
+                                    // Trash button to show the delete alert
                                     Button(action: {
-                                        scheduleToDelete = (dateKey: formattedDate(date: selectedDate), scheduleID: schedule.id)
-                                        showDeleteConfirmation = true
+                                        scheduleToDelete = schedule  // Ruajmë planifikimin që do të fshihet
+                                        showDeleteAlert = true  // Aktivizojmë alert-in
                                     }) {
                                         Image(systemName: "trash")
                                             .foregroundColor(.red)
@@ -119,86 +107,6 @@ struct ScheduleView: View {
                     companyCode: adminData.companyCode
                 )
             }
-            .sheet(isPresented: $showEditScheduleView) {
-                VStack {
-                    HStack {
-                        Button("Cancel") {
-                            showEditScheduleView = false
-                        }
-                        .padding()
-                        .foregroundColor(.red)
-
-                        Spacer()
-
-                        Button("Save Changes") {
-                            // Check that we have valid data and proceed with async update
-                            guard let scheduleToEdit = scheduleToEdit else {
-                                print("Schedule to edit not found.")
-                                return
-                            }
-                            
-                            let startTimeString = convertDateToString(newStartTime)
-                            let endTimeString = convertDateToString(newEndTime)
-
-                            if newEmployeeName.isEmpty || startTimeString.isEmpty || endTimeString.isEmpty {
-                                print("Invalid data provided")
-                                return
-                            }
-
-                            Task {
-                                let result = await editSchedule(
-                                    scheduleID: scheduleToEdit.id,
-                                    dateKey: formattedDate(date: selectedDate),
-                                    newEmployeeName: newEmployeeName,
-                                    newStartTime: startTimeString,
-                                    newEndTime: endTimeString,
-                                    companyCode: adminData.companyCode
-                                )
-
-                                if result {
-                                    loadSchedulesAndEmployees(for: adminData.companyCode)
-                                    showEditScheduleView = false
-                                } else {
-                                    print("Failed to update schedule")
-                                }
-                            }
-                        }
-                        .disabled(newEmployeeName.isEmpty || newStartTime == Date() || newEndTime == Date())
-                        .padding()
-                        .foregroundColor(.blue)
-                    }
-
-                    Text("Edit schedule for \(scheduleToEdit?.employeeName ?? "")")
-                        .font(.headline)
-                        .padding()
-
-                    Form {
-                        Text(scheduleToEdit?.employeeName ?? "")
-                            .font(.body)
-                            .foregroundColor(.gray)
-
-                        DatePicker("Start Time", selection: $newStartTime, displayedComponents: .hourAndMinute)
-                        DatePicker("End Time", selection: $newEndTime, displayedComponents: .hourAndMinute)
-                    }
-                }
-                .padding()
-            }
-
-            // Delete Schedule Alert
-            .alert(isPresented: $showDeleteConfirmation) {
-                Alert(
-                    title: Text("Delete Schedule"),
-                    message: Text("Are you sure you want to delete this schedule?"),
-                    primaryButton: .destructive(Text("Delete")) {
-                        if let scheduleToDelete = scheduleToDelete {
-                            deleteSchedule(dateKey: scheduleToDelete.dateKey,
-                                            personalSecurityNumber: scheduleToDelete.scheduleID,
-                                            scheduleID: scheduleToDelete.scheduleID)
-                        }
-                    },
-                    secondaryButton: .cancel()
-                )
-            }
             .onAppear(perform: {
                 punchsyncfb.loadAdminData(adminData: adminData) { success, error in
                     if success {
@@ -208,6 +116,18 @@ struct ScheduleView: View {
                     }
                 }
             })
+            .alert(isPresented: $showDeleteAlert) {
+                Alert(
+                    title: Text("Confirm Deletion"),
+                    message: Text("Are you sure you want to delete this schedule?"),
+                    primaryButton: .destructive(Text("Delete")) {
+                        if let scheduleToDelete = scheduleToDelete {
+                            deleteSchedule(scheduleID: scheduleToDelete.id)
+                        }
+                    },
+                    secondaryButton: .cancel()
+                )
+            }
         }
     }
 
@@ -215,12 +135,6 @@ struct ScheduleView: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
         return formatter.date(from: timeString) ?? Date()
-    }
-
-    private func convertDateToString(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
-        return formatter.string(from: date)
     }
 
     private func loadSchedulesAndEmployees(for companyCode: String) {
@@ -238,30 +152,29 @@ struct ScheduleView: View {
         }
     }
 
-    func editSchedule(
-        scheduleID: String,
-        dateKey: String,
-        newEmployeeName: String,
-        newStartTime: String,
-        newEndTime: String,
-        companyCode: String
-    ) async -> Bool {
-        guard !companyCode.isEmpty else { return false }
+    private func deleteSchedule(scheduleID: String) {
+        let companyCode = adminData.companyCode
+        guard !companyCode.isEmpty else { return }
 
-        return await withCheckedContinuation { continuation in
-            let ref = Database.database().reference()
-                .child("schedules")
-                .child(companyCode)
-                .child(dateKey)
-                .child(scheduleID)
+        let dateKey = formattedDate(date: selectedDate)
+        let ref = Database.database().reference()
+            .child("schedules")
+            .child(companyCode)
+            .child(dateKey)
 
-            let updatedData: [String: Any] = [
-                "startTime": newStartTime,
-                "endTime": newEndTime
-            ]
-
-            ref.updateChildValues(updatedData) { error, _ in
-                continuation.resume(returning: error == nil)
+        ref.observeSingleEvent(of: .value) { snapshot in
+            for child in snapshot.children.allObjects as? [DataSnapshot] ?? [] {
+                let personalSecurityNumber = child.key
+                if child.hasChild(scheduleID) {
+                    ref.child(personalSecurityNumber).child(scheduleID).removeValue { error, _ in
+                        if error == nil {
+                            DispatchQueue.main.async {
+                                self.schedules[dateKey]?.removeAll { $0.id == scheduleID }
+                            }
+                        }
+                    }
+                    return
+                }
             }
         }
     }
@@ -310,62 +223,26 @@ struct ScheduleView: View {
         }
     }
 
+    func formatTime(_ timeString: String) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
+        if let date = formatter.date(from: timeString) {
+            formatter.dateFormat = "HH:mm"
+            return formatter.string(from: date)
+        }
+        return timeString
+    }
+
     func formattedDate(date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter.string(from: date)
     }
-
-    func formatTime(_ time: String) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
-        guard let date = formatter.date(from: time) else { return "" }
-
-        formatter.dateFormat = "HH:mm"
-        return formatter.string(from: date)
-    }
-
-    private func deleteSchedule(dateKey: String, personalSecurityNumber: String, scheduleID: String) {
-        let ref = Database.database().reference()
-            .child("schedules")
-            .child(adminData.companyCode)
-            .child(dateKey)
-            .child(personalSecurityNumber)
-            .child(scheduleID)
-
-        ref.removeValue { error, _ in
-            if let error = error {
-                print("Error deleting schedule: \(error.localizedDescription)")
-            } else {
-                print("Schedule deleted successfully.")
-                // Rifreskoni oraret pas fshirjes
-                loadSchedulesAndEmployees(for: adminData.companyCode)
-            }
-        }
-    }
-
-    
-    
 }
 
 
-
-    private func formattedDate(date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.string(from: date)
+struct ScheduleView_Previews: PreviewProvider {
+    static var previews: some View {
+        ScheduleView()
     }
-
-    private func formatTime(_ timeString: String) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
-        if let date = formatter.date(from: timeString) {
-            formatter.dateFormat = "HH:mm"  // Formati i dëshiruar për shfaqje
-            return formatter.string(from: date)
-        }
-        return timeString  // Kthehet string origjinal nëse nuk mund të formohet
-    }
-
-#Preview {
-    ScheduleView()
 }
