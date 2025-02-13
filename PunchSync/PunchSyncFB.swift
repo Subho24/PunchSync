@@ -304,11 +304,18 @@ import FirebaseAuth
         // Step 1: Check if personal number already exists anywhere in the database
         let databaseRef = Database.database().reference()
         
-        // Query users by personal number
-        databaseRef.child("users").queryOrdered(byChild: "personalSecurityNumber").queryEqual(toValue: personalNumber).observeSingleEvent(of: .value) { snapshot, _ in
-            if snapshot.exists() && snapshot.childrenCount > 0 {
-                completion("Personal number already registered")
-                return
+        // Query users to check for existing personal number within the same company
+        databaseRef.child("users").observeSingleEvent(of: .value) { snapshot, _ in
+            if let users = snapshot.value as? [String: [String: Any]] {
+                for (_, userData) in users {
+                    if let registeredCompanyCode = userData["companyCode"] as? String,
+                       let registeredPersonalNumber = userData["personalSecurityNumber"] as? String,
+                       registeredCompanyCode == yourcompanyID,
+                       registeredPersonalNumber == personalNumber {
+                        completion("Personal number already registered for this company.")
+                        return
+                    }
+                }
             }
             
             // Step 2: If personal number is unique, create the new user
@@ -364,11 +371,18 @@ import FirebaseAuth
             
             let databaseRef = Database.database().reference()
             
-            // Query users by personal number
-            databaseRef.child("users").queryOrdered(byChild: "personalSecurityNumber").queryEqual(toValue: personalNumber).observeSingleEvent(of: .value) { snapshot, _ in
-                if snapshot.exists() && snapshot.childrenCount > 0 {
-                    completion("Personal number already registered")
-                    return
+            // Query users to check for existing personal number within the same company
+            databaseRef.child("users").observeSingleEvent(of: .value) { snapshot, _ in
+                if let users = snapshot.value as? [String: [String: Any]] {
+                    for (_, userData) in users {
+                        if let registeredCompanyCode = userData["companyCode"] as? String,
+                           let registeredPersonalNumber = userData["personalSecurityNumber"] as? String,
+                           registeredCompanyCode == yourcompanyID,
+                           registeredPersonalNumber == personalNumber {
+                            completion("Personal number already registered for this company.")
+                            return
+                        }
+                    }
                 }
                 
                 // Password verified, proceed with creating new admin
