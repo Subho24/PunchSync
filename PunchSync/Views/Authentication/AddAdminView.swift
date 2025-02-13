@@ -23,13 +23,18 @@ struct AddAdminView: View {
     @State var confirmPassword = ""
     @State var addedAdminName: String = ""
     
-    @State var errorMessage = ""
+    @State var generalErrorMessage = ""
+    @State var nameErrorMessage = ""
+    @State var personalNumberErrorMessage = ""
+    @State var emailErrorMessage = ""
+    @State var passwordErrorMessage = ""
+    @State var confirmPasswordErrorMessage = ""
     
     @State var admin: Bool = true
     
     @State var showAlert = false
     
-    @State private var currentAdminPassword: String = ""
+    @Binding var currentAdminPassword: String 
     @State var showAdminForm = false
     
     // Animation States
@@ -44,7 +49,7 @@ struct AddAdminView: View {
                 Spacer()
                 
                 VStack {
-                    LockedView(showAdminForm: $showAdminForm)
+                    LockedView(parentAdminPassword: $currentAdminPassword, showAdminForm: $showAdminForm)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.top, showAdminForm ? 0 : 100)
@@ -61,45 +66,63 @@ struct AddAdminView: View {
                         
                         TextFieldView(placeholder: "Company Code", text: $yourcompanyID, isSecure: false, systemName: "number")
                             .disabled(true)
+                            .padding(.bottom, 14)
                         
-                        TextFieldView(placeholder: "Full Name", text: $fullName, isSecure: false, systemName: "person", onChange: { errorMessage = ""})
+                        TextFieldView(placeholder: "Full Name", text: $fullName, isSecure: false, systemName: "person", onChange: { nameErrorMessage = ""})
+                        
+                        ErrorMessageView(errorMessage: nameErrorMessage, height: 14)
                         
                         TextFieldView(placeholder: "Personal Number (12 numbers)", text: $personalNumber, isSecure: false, systemName: "lock", onChange: {
                             personalNumber = ValidationUtils.formatPersonalNumber(personalNumber);
-                            errorMessage = ""
+                            personalNumberErrorMessage = ""
                         })
+                        
+                        ErrorMessageView(errorMessage: personalNumberErrorMessage, height: 14)
 
-                        TextFieldView(placeholder: "Email", text: $email, isSecure: false, systemName: "envelope", onChange: { errorMessage = ""})
+                        TextFieldView(placeholder: "Email", text: $email, isSecure: false, systemName: "envelope", onChange: { emailErrorMessage = ""})
                         
-                        TextFieldView(placeholder: "Password", text: $password, isSecure: true, systemName: "lock", onChange: { errorMessage = ""})
+                        ErrorMessageView(errorMessage: emailErrorMessage, height: 14)
                         
-                        TextFieldView(placeholder: "Confirm Password", text: $confirmPassword, isSecure: true, systemName: "lock", onChange: { errorMessage = ""})
+                        TextFieldView(placeholder: "Password", text: $password, isSecure: true, systemName: "lock", onChange: { passwordErrorMessage = ""})
                         
-                        ErrorMessageView(errorMessage: errorMessage)
+                        ErrorMessageView(errorMessage: passwordErrorMessage, height: 14)
+                        
+                        TextFieldView(placeholder: "Confirm Password", text: $confirmPassword, isSecure: true, systemName: "lock", onChange: { confirmPasswordErrorMessage = ""})
+                        
+                        ErrorMessageView(errorMessage: confirmPasswordErrorMessage, height: 14)
                         
                         VStack {
                             Button(action: {
                                 
                                 // First get the current logged-in admin
                                 guard let currentAdmin = Auth.auth().currentUser else {
-                                    errorMessage = "No admin is currently logged in"
+                                    generalErrorMessage = "No admin is currently logged in"
                                     return
                                 }
                                 
                                 // Validate admin password
                                 guard !currentAdminPassword.isEmpty else {
-                                    errorMessage = "Please enter your admin password"
+                                    generalErrorMessage = "Please enter your admin password"
                                     return
                                 }
                                 
-                                if let validationError = ValidationUtils.validateRegisterInputs(fullName: fullName, email: email, password: password, confirmPassword: confirmPassword, companyCode: yourcompanyID) {
-                                    errorMessage = validationError
-                                } else {
+                                nameErrorMessage = ValidationUtils.validateName(name: fullName) ?? ""
+                                personalNumberErrorMessage = ValidationUtils.validatePersonalNumber(personalNumber: personalNumber) ?? ""
+                                emailErrorMessage = ValidationUtils.validateEmail(email: email) ?? ""
+                                passwordErrorMessage = ValidationUtils.validatePassword(password: password) ?? ""
+                                confirmPasswordErrorMessage = ValidationUtils.validateConfirmPassword(password: password, confirmPassword: confirmPassword) ?? ""
+                                
+                                if nameErrorMessage.isEmpty &&
+                                    personalNumberErrorMessage.isEmpty &&
+                                    emailErrorMessage.isEmpty &&
+                                    passwordErrorMessage.isEmpty &&
+                                    confirmPasswordErrorMessage.isEmpty {
+                                    
                                     punchsyncfb.createNewAdmin(email: email, password: password, fullName: fullName, personalNumber: personalNumber, yourcompanyID: yourcompanyID, currentAdmin: currentAdmin,  adminPassword: currentAdminPassword) { firebaseError in
                                         if let error = firebaseError {
-                                            errorMessage = error
+                                            generalErrorMessage = error
                                         } else {
-                                            errorMessage = ""
+                                            generalErrorMessage = ""
                                             showAlert = true
                                             addedAdminName = fullName
                                             // Clear form fields only on success
@@ -124,6 +147,8 @@ struct AddAdminView: View {
                             Text("\(addedAdminName) has been added as an admin.")
                         }
                         .padding(.vertical, 10)
+                        
+                        ErrorMessageView(errorMessage: generalErrorMessage)
                     }
                     .offset(y: adminFormOffset)
                     .onAppear {
@@ -140,5 +165,5 @@ struct AddAdminView: View {
 }
 
 #Preview {
-    AddAdminView()
+    AddAdminView(currentAdminPassword: .constant(""))
 }

@@ -18,10 +18,12 @@ struct UnloggedView: View {
                 Text("PunchSync")
                     .font(.largeTitle)
                     .padding()
+                    .foregroundColor(Color("PrimaryTextColor"))
                 Text("Manage work schedules and track your team's performance effortlessly")
                     .multilineTextAlignment(.center)
                     .padding()
                     .font(.title3)
+                    .foregroundColor(Color("PrimaryTextColor"))
                 
                 NavigationLink(destination: LoginView()) {
                     ButtonView(buttontext: "Log in")

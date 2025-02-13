@@ -26,9 +26,13 @@ struct TextFieldView: View {
 
                 // Conditionally render SecureField or TextField
                 if isSecure {
-                    SecureField(placeholder, text: $text)
+                    SecureField("", text: $text, prompt: Text(placeholder).foregroundStyle(.black.opacity(0.5)))
+                        .foregroundColor(Color.black)
+                        .tint(.black)
                 } else {
-                    TextField(placeholder, text: $text)
+                    TextField("", text: $text, prompt: Text(placeholder).foregroundStyle(.black.opacity(0.5)))
+                        .foregroundColor(Color.black)
+                        .tint(.black)
                 }
             }
             .frame(height: 46) // Set height for the field

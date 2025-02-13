@@ -103,7 +103,7 @@ struct LeaveRequestView: View {
                 .padding(.horizontal, 50)
                 
                 TextEditor(text: $description)
-                    .frame(height: 100) 
+                    .frame(height: 100)
                     .padding(5)
                     .background(Color.white)
                     .cornerRadius(10)
@@ -133,32 +133,32 @@ struct LeaveRequestView: View {
                 
                 Button(action: {
                     punchsyncfb.saveLeaveRequest(title: title, requestType: selectedRequestType, description: description, startDate: startDate, endDate: startDate,  employeeName: employeeData.fullName,
-                        completion: { success, error in
+                                                 completion: { success, error in
                         if let error = error {
                             isSuccess = false
                             self.errorMessage = error
                             showToast = false
                         } else if success {
-                             isSuccess = true
-                             withAnimation {
-                                 showToast = true
-                             }
-                             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                                 withAnimation {
-                                     showToast = false
-                                 }
-                             }
-                             title = ""
-                             selectedRequestType = ""
-                             description = ""
-                             startDate = Date()
-                             endDate = Calendar.current.date(byAdding: .month, value: 1, to: Date())!
-                             errorMessage = ""
-                             }
-                         })
-                     }) {
-                         ButtonView(buttontext: "Send Leave Request")
-                    }
+                            isSuccess = true
+                            withAnimation {
+                                showToast = true
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                withAnimation {
+                                    showToast = false
+                                }
+                            }
+                            title = ""
+                            selectedRequestType = ""
+                            description = ""
+                            startDate = Date()
+                            endDate = Calendar.current.date(byAdding: .month, value: 1, to: Date())!
+                            errorMessage = ""
+                        }
+                    })
+                }) {
+                    ButtonView(buttontext: "Send Leave Request")
+                }
             }
             .overlay(alignment: .center) {
                 if showToast {

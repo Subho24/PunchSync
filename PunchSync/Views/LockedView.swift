@@ -14,6 +14,7 @@ struct LockedView: View {
     @State var errorMessage = ""
     
     @State private var currentAdminPassword: String = ""
+    @Binding var parentAdminPassword: String
     @Binding var showAdminForm: Bool
     @State private var isAuthenticating = false
     
@@ -74,6 +75,7 @@ struct LockedView: View {
                             } else {
                                 withAnimation {
                                     showAdminForm = true
+                                    parentAdminPassword = currentAdminPassword
                                 }
                                 // Lösenord verifierat korrekt
                                 errorMessage = ""
@@ -89,5 +91,5 @@ struct LockedView: View {
 }
 
 #Preview {
-    LockedView(showAdminForm: .constant(false))
+    LockedView(parentAdminPassword: .constant(""), showAdminForm: .constant(false))
 }
