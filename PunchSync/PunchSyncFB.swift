@@ -669,7 +669,8 @@ import FirebaseAuth
                 "endDate": endDate.timeIntervalSince1970,
                 "timestamp": ServerValue.timestamp(),
                 "employeeName": employeeName,
-                "userId": userId
+                "userId": userId,
+                "pending": true
             ]
             
             // Spara under companyCode
@@ -684,6 +685,48 @@ import FirebaseAuth
                     }
                 }
         }
+    }
+    
+    // Function to get pending users for a specific company
+    func getPendingLeaveRequests(companyCode: String, completion: @escaping ([String: Any]?, String?) -> Void) {
+        // Validate companyCode first
+        guard !companyCode.isEmpty else {
+            completion(nil, "Company code cannot be empty")
+            return
+        }
+        
+        // Check for invalid characters
+        let invalidChars = [".", "#", "$", "[", "]"]
+        for char in invalidChars {
+            if companyCode.contains(char) {
+                completion(nil, "Company code contains invalid characters")
+                return
+            }
+        }
+        
+        let ref = Database.database().reference()
+        
+        // Query specifically under the company code
+        ref.child("leaveRequests").child(companyCode)
+            .observeSingleEvent(of: .value) { snapshot in
+                print("Snapshot data: \(snapshot.value ?? "No data")")
+                var pendingLeaveRequests: [String: Any] = [:]
+                
+                for child in snapshot.children {
+                    guard let snapshot = child as? DataSnapshot,
+                          let leaveRequestData = snapshot.value as? [String: Any],
+                          let pending = leaveRequestData["pending"] as? Bool,
+                          pending == true
+                    else {
+                        continue
+                    }
+                    
+                    pendingLeaveRequests[snapshot.key] = leaveRequestData
+                }
+                completion(pendingLeaveRequests, nil)
+            } withCancel: { error in
+                completion(nil, error.localizedDescription)
+            }
     }
 
     func loadLeaveRequests(forCompanyCode companyCode: String, completion: @escaping ([LeaveRequest]?, String?) -> Void) {
