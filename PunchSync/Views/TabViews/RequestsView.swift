@@ -14,6 +14,9 @@ struct RequestsView: View {
     @State private var leaveRequests: [LeaveRequest] = []
     @State private var selectedCategory: String = ""
     @State private var categories: [String] = ["Annual leave", "Sick leave", "Parental leave", "Unpaid leave", "Study leave", "Care leave", "Special leave", "Leave without pay"]
+    
+    @State private var pendingLeaveRequests: [String: Any] = [:]
+    @State private var isLoading = true
 
     
     var body: some View {
@@ -27,14 +30,59 @@ struct RequestsView: View {
                     Text("Company Code: \(adminData.companyCode)")
                 }
                 .task {
+                    // First load admin data
                     punchsyncfb.loadAdminData(adminData: adminData) { success, error in
                         if success {
                             print("Admin data loaded successfully")
+                            // Only load pending leave requests after admin data is loaded
+                            Task {
+                                await loadPendingLeaveRequests()
+                            }
                         } else if let error = error {
-                            print("Error loading admin data: \(error.localizedDescription)")
+                            print("Error loading admin data: \(error)")
                         }
                     }
                     await loadAllData()
+                }
+            }
+            
+            Section(header: Text("Pending Leave Requests")) {
+                ForEach(Array(pendingLeaveRequests.keys), id: \.self) { requestId in
+                    if let leaveRequestData = pendingLeaveRequests[requestId] as? [String: Any],
+                       let employeeName = leaveRequestData["employeeName"] as? String,
+                       let title = leaveRequestData["title"] as? String,
+                       let userId = leaveRequestData["userId"] as? String {
+                        VStack(alignment: .leading) {
+                            Text("Employee: \(employeeName)")
+                                .font(.headline)
+                            Text("Title: \(title)")
+                                .padding(.bottom, 10)
+                            
+                            HStack {
+                                Button("Verify") {
+                                    // Here you'd call your verifyLeaveRequest function
+                                   
+                                }
+                                .padding(8)
+                                .padding(.horizontal, 15)
+                                .background(Color.green)
+                                .cornerRadius(10)
+                                .foregroundStyle(.white)
+                                
+                                Button("Deny") {
+                                    // Here you'd call your verifyLeaveRequest function with approved=false
+                                    
+                                }
+                                .padding(8)
+                                .padding(.horizontal, 15)
+                                .background(Color.red)
+                                .cornerRadius(10)
+                                .foregroundStyle(.white)
+                            }
+                        }
+                        .padding(.horizontal, 25)
+                        .padding(.top, 20)
+                    }
                 }
             }
         
@@ -102,6 +150,30 @@ struct RequestsView: View {
         .padding(.bottom, 30)
         
         Spacer()
+    }
+    
+    private func loadPendingLeaveRequests() async {
+        // Validate companyCode first to prevent crash
+        guard !adminData.companyCode.isEmpty else {
+            print("Warning: Company code is empty, cannot load pending leave requests")
+            return
+        }
+        
+        await withCheckedContinuation { continuation in
+            punchsyncfb.getPendingLeaveRequests(companyCode: adminData.companyCode) { leaveRequests, error in
+                if let error = error {
+                    print("Error loading pending leave requests: \(error)")
+                }
+                
+                if let pendingLeaveRequests = leaveRequests {
+                    DispatchQueue.main.async {
+                        self.pendingLeaveRequests = pendingLeaveRequests
+                        self.isLoading = false
+                    }
+                }
+                continuation.resume()
+            }
+        }
     }
     
     private func loadAllData() async {
