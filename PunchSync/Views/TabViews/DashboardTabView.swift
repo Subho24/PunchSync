@@ -107,19 +107,6 @@ struct DashboardTabView: View {
             }
         }
         .padding()
-        .onAppear {
-            if let currentAdminId = Auth.auth().currentUser?.uid {
-                getCompanyCode(currentAdminId) { companyCode in
-                    if let code = companyCode {
-                        currCompanyCode = code
-                    }
-                }
-
-            } else {
-                print("No admin is currently logged in")
-                return
-            }
-        }
         Spacer()
             .frame(height: 100)
     }
