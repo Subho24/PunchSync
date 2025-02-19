@@ -17,6 +17,8 @@ struct RequestsView: View {
     
     @State private var pendingLeaveRequests: [String: Any] = [:]
     @State private var isLoading = true
+    
+    @State private var selectedTab = 0
 
     
     var body: some View {
@@ -46,7 +48,29 @@ struct RequestsView: View {
                 }
             }
             
-            Section(header: Text("Pending Leave Requests")) {
+            Picker("Leave Requests", selection: $selectedTab) {
+                Text("Pending requests").tag(0)
+                Text("Verified requests").tag(1)
+            }
+            .pickerStyle(SegmentedPickerStyle())
+            .padding(.vertical, 50)
+            .padding(.horizontal, 20)
+            
+            switch selectedTab {
+            case 0:
+                /*
+                HStack {
+                    Text("Pending Leave Requests")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundColor(Color("SecondaryTextColor"))
+                        .padding(.top, 20)
+                        .padding(.bottom, 10)
+                    Spacer()
+                }
+                .padding()
+                */
+                
                 ForEach(Array(pendingLeaveRequests.keys), id: \.self) { requestId in
                     if let leaveRequestData = pendingLeaveRequests[requestId] as? [String: Any],
                        let employeeName = leaveRequestData["employeeName"] as? String,
@@ -61,7 +85,7 @@ struct RequestsView: View {
                             HStack {
                                 Button("Verify") {
                                     verifyLeaveRequest(requestId: requestId, approved: true)
-                                   
+                                    
                                 }
                                 .padding(8)
                                 .padding(.horizontal, 15)
@@ -84,40 +108,45 @@ struct RequestsView: View {
                         .padding(.top, 20)
                     }
                 }
-            }
-        
-            HStack {
-                Text("Leave Requests")
-                   .font(.largeTitle)
-                   .fontWeight(.bold)
-                   .foregroundColor(Color("SecondaryTextColor"))
-                   .padding(.top, 20)
-                   .padding(.bottom, 10)
-                Spacer()
-            }
-            .padding()
-            
-            Menu {
-                ForEach(categories, id: \.self) { category in
-                    Button(category) {
-                        selectedCategory = category
-                    }
-                }
-            } label: {
+                
+            case 1:
+                /*
                 HStack {
-                    Text(selectedCategory.isEmpty ? "Choose Leave Request Type" : selectedCategory)
-                        .foregroundColor(Color.white)
+                    Text("Leave Requests")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundColor(Color("SecondaryTextColor"))
+                        .padding(.top, 20)
+                        .padding(.bottom, 10)
                     Spacer()
-                    Image(systemName: "chevron.down")
-                        .foregroundColor(.gray)
                 }
                 .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(Color(hex: "FE7E65"))
-                )
+                */
+                
+                Menu {
+                    ForEach(categories, id: \.self) { category in
+                        Button(category) {
+                            selectedCategory = category
+                        }
+                    }
+                } label: {
+                    HStack {
+                        Text(selectedCategory.isEmpty ? "Choose Leave Request Type" : selectedCategory)
+                            .foregroundColor(Color.white)
+                        Spacer()
+                        Image(systemName: "chevron.down")
+                            .foregroundColor(.gray)
+                    }
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color(hex: "FE7E65"))
+                    )
+                }
+                .padding(.horizontal)
+            default:
+                EmptyView()
             }
-            .padding(.horizontal)
 
             // Display leave requests based on selected category
             if !selectedCategory.isEmpty {
