@@ -749,7 +749,8 @@ import FirebaseAuth
                    let description = requestData["description"] as? String,
                    let startDateInterval = requestData["startDate"] as? TimeInterval,
                    let endDateInterval = requestData["endDate"] as? TimeInterval,
-                   let employeeName = requestData["employeeName"] as? String {
+                   let employeeName = requestData["employeeName"] as? String,
+                   let isPending = requestData["pending"] as? Bool {
 
                     let startDate = Date(timeIntervalSince1970: startDateInterval)
                     let endDate = Date(timeIntervalSince1970: endDateInterval)
@@ -761,7 +762,8 @@ import FirebaseAuth
                         description: description,
                         startDate: startDate,
                         endDate: endDate,
-                        employeeName: employeeName
+                        employeeName: employeeName,
+                        pending: isPending
                     )
 
                     leaveRequests.append(leaveRequest)
@@ -769,6 +771,44 @@ import FirebaseAuth
             }
 
             completion(leaveRequests, nil) // Returnera listan av requests för det angivna companyCode
+        }
+    }
+    
+    func verifyLeaveRequest(requestId: String, companyCode: String, approved: Bool, completion: @escaping (Bool, String?) -> Void) {
+        let ref = Database.database().reference()
+        
+        // Reference the specific leave request
+        let requestRef = ref.child("leaveRequests").child(companyCode).child(requestId)
+        
+        // First get the current leave request data
+        requestRef.observeSingleEvent(of: .value) { snapshot in
+            guard snapshot.exists(),
+                  let requestData = snapshot.value as? [String: Any],
+                  let pending = requestData["pending"] as? Bool,
+                  pending == true else {
+                completion(false, "Request not found or already processed")
+                return
+            }
+            
+            if approved {
+                // Update the leave request status to verified (not pending)
+                requestRef.child("pending").setValue(false) { error, _ in
+                    if let error = error {
+                        completion(false, error.localizedDescription)
+                    } else {
+                        completion(true, nil)
+                    }
+                }
+            } else {
+                // Remove the leave request if not approved
+                requestRef.removeValue { error, _ in
+                    if let error = error {
+                        completion(false, error.localizedDescription)
+                    } else {
+                        completion(true, nil)
+                    }
+                }
+            }
         }
     }
 

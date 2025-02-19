@@ -60,7 +60,7 @@ struct RequestsView: View {
                             
                             HStack {
                                 Button("Verify") {
-                                    // Here you'd call your verifyLeaveRequest function
+                                    verifyLeaveRequest(requestId: requestId, approved: true)
                                    
                                 }
                                 .padding(8)
@@ -70,7 +70,7 @@ struct RequestsView: View {
                                 .foregroundStyle(.white)
                                 
                                 Button("Deny") {
-                                    // Here you'd call your verifyLeaveRequest function with approved=false
+                                    verifyLeaveRequest(requestId: requestId, approved: false)
                                     
                                 }
                                 .padding(8)
@@ -121,7 +121,10 @@ struct RequestsView: View {
 
             // Display leave requests based on selected category
             if !selectedCategory.isEmpty {
-                let filteredRequests = leaveRequests.filter { $0.requestType == selectedCategory }
+                let filteredRequests = leaveRequests.filter {
+                    
+                    $0.requestType == selectedCategory && !$0.pending
+                }
                 
                 if filteredRequests.isEmpty {
                     Text("No leave requests found in this category.")
@@ -172,6 +175,35 @@ struct RequestsView: View {
                     }
                 }
                 continuation.resume()
+            }
+        }
+    }
+    
+    private func verifyLeaveRequest(requestId: String, approved: Bool) {
+        punchsyncfb.verifyLeaveRequest(requestId: requestId, companyCode: adminData.companyCode, approved: approved) { [self] success, error in
+            if success {
+                DispatchQueue.main.async {
+                    // Remove from pending requests
+                    self.pendingLeaveRequests.removeValue(forKey: requestId)
+                    
+                    // Reload all leave requests to update the list
+                    Task {
+                        await withCheckedContinuation { continuation in
+                            punchsyncfb.loadLeaveRequests(forCompanyCode: adminData.companyCode) { leaveRequests, error in
+                                if let error = error {
+                                    print("Failed to reload leave requests: \(error)")
+                                } else if let loadedRequests = leaveRequests {
+                                    DispatchQueue.main.async {
+                                        self.leaveRequests = loadedRequests
+                                    }
+                                }
+                                continuation.resume()
+                            }
+                        }
+                    }
+                }
+            } else if let error = error {
+                print("Error verifying leave request: \(error)")
             }
         }
     }
