@@ -15,6 +15,7 @@ struct LeaveRequest: Identifiable {
     var startDate: Date
     var endDate: Date
     let employeeName: String
+    let pending: Bool
 }
 
 extension LeaveRequest {
@@ -25,7 +26,8 @@ extension LeaveRequest {
             "description": description,
             "startDate": startDate.timeIntervalSince1970,
             "endDate": endDate.timeIntervalSince1970,
-            "employeeName": employeeName
+            "employeeName": employeeName,
+            "pending": pending
         ]
     }
 }

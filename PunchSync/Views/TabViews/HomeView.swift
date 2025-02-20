@@ -14,6 +14,7 @@ struct HomeView: View {
     @State var punchsyncfb = PunchSyncFB()
     @State private var isLocked: Bool = false
     @State private var isReady: Bool = false
+    @State var showingSignOutAlert = false
     
     
     init(isAdmin: Bool) {
@@ -49,7 +50,7 @@ struct HomeView: View {
                 Spacer()
                     .frame(width: 330)
                 Button(action: {
-                    punchsyncfb.userLogout()
+                    showingSignOutAlert = true
                 }) {
                     Image(systemName: "rectangle.portrait.and.arrow.right")
                         .font(.system(size: 20))
@@ -107,6 +108,12 @@ struct HomeView: View {
                     }
                 }
                 .accentColor(Color(hex: "283B34")) // Active Tab
+                .alert("Are you sure you want to sign out?", isPresented: $showingSignOutAlert) {
+                    Button("Go Back", role: .cancel) { }
+                    Button("Sign Out", role: .destructive) {
+                        punchsyncfb.userLogout()
+                    }
+                }
             } else {
                 TabView {
                     // Schedule View
@@ -141,9 +148,14 @@ struct HomeView: View {
                     }
                 }
                 .accentColor(Color(hex: "283B34")) // Active Tab
+                .alert("Are you sure you want to sign out?", isPresented: $showingSignOutAlert) {
+                    Button("Go Back", role: .cancel) { }
+                    Button("Sign Out", role: .destructive) {
+                        punchsyncfb.userLogout()
+                    }
+                }
             }
         }
-        
     }
 }
           

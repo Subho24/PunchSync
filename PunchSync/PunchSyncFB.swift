@@ -304,11 +304,18 @@ import FirebaseAuth
         // Step 1: Check if personal number already exists anywhere in the database
         let databaseRef = Database.database().reference()
         
-        // Query users by personal number
-        databaseRef.child("users").queryOrdered(byChild: "personalSecurityNumber").queryEqual(toValue: personalNumber).observeSingleEvent(of: .value) { snapshot, _ in
-            if snapshot.exists() && snapshot.childrenCount > 0 {
-                completion("Personal number already registered")
-                return
+        // Query users to check for existing personal number within the same company
+        databaseRef.child("users").observeSingleEvent(of: .value) { snapshot, _ in
+            if let users = snapshot.value as? [String: [String: Any]] {
+                for (_, userData) in users {
+                    if let registeredCompanyCode = userData["companyCode"] as? String,
+                       let registeredPersonalNumber = userData["personalSecurityNumber"] as? String,
+                       registeredCompanyCode == yourcompanyID,
+                       registeredPersonalNumber == personalNumber {
+                        completion("Personal number already registered for this company.")
+                        return
+                    }
+                }
             }
             
             // Step 2: If personal number is unique, create the new user
@@ -364,11 +371,18 @@ import FirebaseAuth
             
             let databaseRef = Database.database().reference()
             
-            // Query users by personal number
-            databaseRef.child("users").queryOrdered(byChild: "personalSecurityNumber").queryEqual(toValue: personalNumber).observeSingleEvent(of: .value) { snapshot, _ in
-                if snapshot.exists() && snapshot.childrenCount > 0 {
-                    completion("Personal number already registered")
-                    return
+            // Query users to check for existing personal number within the same company
+            databaseRef.child("users").observeSingleEvent(of: .value) { snapshot, _ in
+                if let users = snapshot.value as? [String: [String: Any]] {
+                    for (_, userData) in users {
+                        if let registeredCompanyCode = userData["companyCode"] as? String,
+                           let registeredPersonalNumber = userData["personalSecurityNumber"] as? String,
+                           registeredCompanyCode == yourcompanyID,
+                           registeredPersonalNumber == personalNumber {
+                            completion("Personal number already registered for this company.")
+                            return
+                        }
+                    }
                 }
                 
                 // Password verified, proceed with creating new admin
@@ -655,7 +669,8 @@ import FirebaseAuth
                 "endDate": endDate.timeIntervalSince1970,
                 "timestamp": ServerValue.timestamp(),
                 "employeeName": employeeName,
-                "userId": userId
+                "userId": userId,
+                "pending": true
             ]
             
             // Spara under companyCode
@@ -670,6 +685,48 @@ import FirebaseAuth
                     }
                 }
         }
+    }
+    
+    // Function to get pending users for a specific company
+    func getPendingLeaveRequests(companyCode: String, completion: @escaping ([String: Any]?, String?) -> Void) {
+        // Validate companyCode first
+        guard !companyCode.isEmpty else {
+            completion(nil, "Company code cannot be empty")
+            return
+        }
+        
+        // Check for invalid characters
+        let invalidChars = [".", "#", "$", "[", "]"]
+        for char in invalidChars {
+            if companyCode.contains(char) {
+                completion(nil, "Company code contains invalid characters")
+                return
+            }
+        }
+        
+        let ref = Database.database().reference()
+        
+        // Query specifically under the company code
+        ref.child("leaveRequests").child(companyCode)
+            .observeSingleEvent(of: .value) { snapshot in
+                print("Snapshot data: \(snapshot.value ?? "No data")")
+                var pendingLeaveRequests: [String: Any] = [:]
+                
+                for child in snapshot.children {
+                    guard let snapshot = child as? DataSnapshot,
+                          let leaveRequestData = snapshot.value as? [String: Any],
+                          let pending = leaveRequestData["pending"] as? Bool,
+                          pending == true
+                    else {
+                        continue
+                    }
+                    
+                    pendingLeaveRequests[snapshot.key] = leaveRequestData
+                }
+                completion(pendingLeaveRequests, nil)
+            } withCancel: { error in
+                completion(nil, error.localizedDescription)
+            }
     }
 
     func loadLeaveRequests(forCompanyCode companyCode: String, completion: @escaping ([LeaveRequest]?, String?) -> Void) {
@@ -692,7 +749,8 @@ import FirebaseAuth
                    let description = requestData["description"] as? String,
                    let startDateInterval = requestData["startDate"] as? TimeInterval,
                    let endDateInterval = requestData["endDate"] as? TimeInterval,
-                   let employeeName = requestData["employeeName"] as? String {
+                   let employeeName = requestData["employeeName"] as? String,
+                   let isPending = requestData["pending"] as? Bool {
 
                     let startDate = Date(timeIntervalSince1970: startDateInterval)
                     let endDate = Date(timeIntervalSince1970: endDateInterval)
@@ -704,7 +762,8 @@ import FirebaseAuth
                         description: description,
                         startDate: startDate,
                         endDate: endDate,
-                        employeeName: employeeName
+                        employeeName: employeeName,
+                        pending: isPending
                     )
 
                     leaveRequests.append(leaveRequest)
@@ -712,6 +771,44 @@ import FirebaseAuth
             }
 
             completion(leaveRequests, nil) // Returnera listan av requests för det angivna companyCode
+        }
+    }
+    
+    func verifyLeaveRequest(requestId: String, companyCode: String, approved: Bool, completion: @escaping (Bool, String?) -> Void) {
+        let ref = Database.database().reference()
+        
+        // Reference the specific leave request
+        let requestRef = ref.child("leaveRequests").child(companyCode).child(requestId)
+        
+        // First get the current leave request data
+        requestRef.observeSingleEvent(of: .value) { snapshot in
+            guard snapshot.exists(),
+                  let requestData = snapshot.value as? [String: Any],
+                  let pending = requestData["pending"] as? Bool,
+                  pending == true else {
+                completion(false, "Request not found or already processed")
+                return
+            }
+            
+            if approved {
+                // Update the leave request status to verified (not pending)
+                requestRef.child("pending").setValue(false) { error, _ in
+                    if let error = error {
+                        completion(false, error.localizedDescription)
+                    } else {
+                        completion(true, nil)
+                    }
+                }
+            } else {
+                // Remove the leave request if not approved
+                requestRef.removeValue { error, _ in
+                    if let error = error {
+                        completion(false, error.localizedDescription)
+                    } else {
+                        completion(true, nil)
+                    }
+                }
+            }
         }
     }
 

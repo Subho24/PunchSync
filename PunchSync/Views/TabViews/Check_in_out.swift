@@ -72,7 +72,6 @@ struct Check_in_out: View {
         let ref = Database.database().reference()
 
         ref.child("users").observeSingleEvent(of: .value) { snapshot in
-            print("userValidation called")
 
             var userFound = false
 
@@ -84,14 +83,12 @@ struct Check_in_out: View {
                    securityNumber == ValidationUtils.formatPersonalNumber(personalNumber) {
 
                     userValidated = true
-                    print("user found")
                     userFound = true
                     break
                 }
             }
 
             if !userFound {
-                print("user not found")
                 userNotFoundAlert = true
             }
 
@@ -111,7 +108,6 @@ struct Check_in_out: View {
         var lastPunchType: String?
         
         ref.child("users").observeSingleEvent(of: .value) { snapshot in
-            print(snapshot)
             
             for child in snapshot.children {
                 if let childSnapshot = child as? DataSnapshot,
@@ -120,8 +116,6 @@ struct Check_in_out: View {
                    securityNumber == ValidationUtils.formatPersonalNumber(personalNumber) {
 
                     userValidated = true
-                    print("user found")
-                    print(userData)
                     
                     newUserData = userData
                     
@@ -144,10 +138,8 @@ struct Check_in_out: View {
                             checkedIn = false
                         }
                         lastPunchType = punchType
-                        print("Last punch type: \(lastPunchType ?? "None")")
                     }
                     
-                    print(lastPunchType, "lastPunchType")
                     //ref.child("users").child(childSnapshot.key).setValue(newUserData)
                     break
                 }
@@ -161,21 +153,19 @@ struct Check_in_out: View {
         
     }
         
-        func fixPunchRecord(_ punchDetails: inout [String: String]) {
+    func fixPunchRecord(_ punchDetails: inout [String: String]) -> [String: String] {
+            print(punchDetails, "here is the punchDetails")
+            
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
             dateFormatter.locale = Locale(identifier: "en_US_POSIX")
             dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
             
-            print(punchDetails, "I will Fix You")
-            
             // Ensure `checkInTime` exists and parse it
-            print(punchDetails["checkInTime"]!)
             guard let checkInTimeString = punchDetails["checkInTime"]?.trimmingCharacters(in: .whitespacesAndNewlines),
                   let checkInTime = dateFormatter.date(from: checkInTimeString)
             else {
-                print("Invalid or missing checkInTime.")
-                return
+                return [:]
             }
             
             // Set `checkOutTime` to the same date at 23:59 if missing
@@ -194,7 +184,8 @@ struct Check_in_out: View {
                 punchDetails["breakEndTime"] = dateFormatter.string(from: breakEndTime)
             }
             
-            print(punchDetails, "Did i fix you?")
+            print(punchDetails, "here is the fixed punchDetails")
+            return punchDetails
         }
         
     func checkInUser(_ personalNummer: String) {
@@ -211,7 +202,6 @@ struct Check_in_out: View {
         dateTimeFormatter.locale = Locale(identifier: "en_US_POSIX")
         let currentDateTimeString = dateTimeFormatter.string(from: Date())
         
-        print("\(userInput) \(currentDateTimeString)")
         
         let punchData: [String: String] = [
             "checkInTime": currentDateTimeString,
@@ -277,10 +267,8 @@ struct Check_in_out: View {
                         // Update the database with the updated array
                         ref.child("punch_records").child(personalNummer).child(currentDateString).setValue(updatedRecordArray)
                         
-                        print("User with personal number \(personalNummer) has checked out at \(currentDateTimeString).")
                     }
                 } else {
-                    print("User with personal number \(personalNummer) has already checked out today.")
                 }
             } else if let record = snapshot.value as? [String: String] {
                 // Data is a single record, handle it as before
@@ -444,7 +432,7 @@ struct Check_in_out: View {
         let currentDateString = dateFormatter.string(from: Date())
         
         // Fetch all punch records for the user
-        ref.child("punch_records").child(personalNumber).observeSingleEvent(of: .value) { snapshot in
+        ref.child("punch_records").child(personalNumber).observeSingleEvent(of: .value) { snapshot  in
             guard let records = snapshot.value as? [String: Any] else {
                 print("No records found for user \(personalNumber).")
                 return
@@ -454,49 +442,46 @@ struct Check_in_out: View {
             
             for (date, record) in records {
                 // Check if the data is an array or a single record
-                if var recordArray = record as? [[String: String]], !recordArray.isEmpty {
-                    // If the data is an array, update the last record in place
-                    var punchData = recordArray.last!
-                    
-                    if let checkInTime = punchData["checkInTime"], !isTimeWithin12Hours(checkInTime, "CheckIn") {
-                        fixPunchRecord(&punchData)
-                    }
-                    
-                    if let checkOutTime = punchData["checkOutTime"], !isTimeWithin12Hours(checkOutTime, "CheckOut") {
-                        fixPunchRecord(&punchData)
-                    }
-                    
-                    // Update the last element instead of appending a new one
-                    recordArray[recordArray.count - 1] = punchData
-                    
-                    print(punchData, "Updated record")
-                    print(recordArray, "Updated recordArray")
-                    
-                    ref.child("punch_records").child(personalNumber).child(date).setValue(recordArray)
-                    
-                    // Check if the user is checked in today
-                    if date == currentDateString {
-                        isTodayCheckedIn = true
+                if let recordArray = record as? [[String: String]] {
+                    // If the data is an array, check and update the last record in the array
+                    if let lastRecord = recordArray.last {
+                        var punchData = lastRecord
                         
-                        if punchData["checkOutTime"] == "" {
-                            checkedIn = true
+                        // Fix invalid records
+                        if let checkInTime = lastRecord["checkInTime"], !isTimeWithin12Hours(checkInTime, "CheckIn") {
+                            let fixedPunchData = fixPunchRecord(&punchData)  // Get corrected data
+                            
+                            // Update only the fixed record in Firebase
+                            let lastIndex = recordArray.count - 1
+                            let recordPath = "/punch_records/\(personalNumber)/\(date)/\(lastIndex)"
+                            print(recordPath)
+                            ref.child(recordPath).updateChildValues(fixedPunchData)
                         }
                         
-                        if punchData["breakStartTime"] != "" && punchData["breakEndTime"] == "" {
-                            inBreak = true
+                        // Update the database with the fixed record
+                        // ref.child("punch_records").child(personalNumber).child(date).setValue(recordArray)
+                        
+                        // Check if the user is checked in today
+                        if date == currentDateString {
+                            isTodayCheckedIn = true
+                            
+                            if lastRecord["checkOutTime"] == "" {
+                                checkedIn = true
+                            }
+                            
+                            if lastRecord["breakStartTime"] != "" && lastRecord["breakEndTime"] == "" {
+                                inBreak = true
+                            }
                         }
                     }
-                } else if var punchData = record as? [String: String] {
-                    // If the data is a single record, update it
-                    if let checkInTime = punchData["checkInTime"], !isTimeWithin12Hours(checkInTime, "CheckIn") {
+                } else if let record = record as? [String: String] {
+                    // If the data is a single record, handle it as before
+                    var punchData = record
+                    
+                    // Fix invalid records
+                    if let checkInTime = record["checkInTime"], !isTimeWithin12Hours(checkInTime, "CheckIn") {
                         fixPunchRecord(&punchData)
                     }
-                    
-                    if let checkOutTime = punchData["checkOutTime"], !isTimeWithin12Hours(checkOutTime, "CheckOut") {
-                        fixPunchRecord(&punchData)
-                    }
-                    
-                    print(punchData, "Updated single record")
                     
                     // Update the database with the fixed record
                     ref.child("punch_records").child(personalNumber).child(date).setValue(punchData)
@@ -505,19 +490,31 @@ struct Check_in_out: View {
                     if date == currentDateString {
                         isTodayCheckedIn = true
                         
-                        if punchData["checkOutTime"] == "" {
+                        if record["checkOutTime"] == "" {
                             checkedIn = true
                         }
                         
-                        if punchData["breakStartTime"] != "" && punchData["breakEndTime"] == "" {
+                        if record["breakStartTime"] != "" && record["breakEndTime"] == "" {
                             inBreak = true
                         }
                     }
                 }
             }
+            
+            // If no check-in for today, create a new record
+            /*if !isTodayCheckedIn {
+                let punchData: [String: String] = [
+                    "checkInTime": dateTimeFormatter.string(from: Date()),
+                    "checkOutTime": "",
+                    "breakStartTime": "",
+                    "breakEndTime": ""
+                ]
+                ref.child("punch_records").child(personalNumber).child(currentDateString).setValue([punchData])
+                checkedIn = true
+                inBreak = false
+            }*/
         }
     }
-
 
         
         
@@ -580,7 +577,6 @@ struct Check_in_out: View {
                             }
                             print("pressed next")
                             if !userInput.isEmpty && ValidationUtils.isValidPersonalNumber(userInput) {
-                                print("working")
                                 validateUser(userInput) {
                                     if(userValidated) {
                                         showButtons = true
@@ -606,8 +602,6 @@ struct Check_in_out: View {
                     if showButtons {
                         HStack {
                             Button(action: {
-                                print(checkedIn)
-                                print(inBreak)
                                 checkInUser(userInput)
                                 checkInAlert = true
                             }) {
@@ -627,8 +621,6 @@ struct Check_in_out: View {
                             
                             
                             Button(action: {
-                                print(checkedIn)
-                                print(inBreak)
                                 checkOutUser(userInput)
                                 checkOutAlert = true
                             }) {
@@ -650,8 +642,6 @@ struct Check_in_out: View {
                     if showButtons && checkedIn {
                         HStack {
                             Button(action: {
-                                print(checkedIn)
-                                print(inBreak)
                                 // start break
                                 breakStartAlert = true
                                 updateBreakTime(userInput, "start")
@@ -671,8 +661,6 @@ struct Check_in_out: View {
                             .opacity(inBreak ? 0.5 : 1)
                             
                             Button(action: {
-                                print(checkedIn, "checkin")
-                                print(inBreak, "break")
                                 // End break
                                 breakEndAlert = true
                                 updateBreakTime(userInput, "end")
@@ -706,8 +694,6 @@ struct Check_in_out: View {
                     print("No admin is currently logged in")
                     return
                 }
-                
-                print(currCompanyCode, "here")
             }
         }
     
