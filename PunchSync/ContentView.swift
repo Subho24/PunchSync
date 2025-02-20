@@ -47,7 +47,7 @@ struct ContentView: View {
     
     private func fetchAdminStatus(for userId: String) {
         let ref = Database.database().reference()
-        ref.child("users").child(userId).observeSingleEvent(of: .value) { snapshot in
+        ref.child("users").child(userId).observe(.value) { snapshot in
             if let data = snapshot.value as? [String: Any] {
                 isAdmin = data["admin"] as? Bool ?? false
             } else {

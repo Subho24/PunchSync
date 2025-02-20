@@ -38,17 +38,6 @@ struct LeaveRequestView: View {
                     VStack {
                         Text("\(employeeData.fullName)")
                             .font(.headline)
-                        Button(action: {
-                            punchsyncfb.userLogout()
-                        }) {
-                            Text("Sign out")
-                                .font(.headline)
-                                .foregroundColor(.red)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 5)
-                                .background(Color(hex: "ECE9D4"))
-                                .cornerRadius(10)
-                        }
                     }
                     Spacer()
                 }
