@@ -58,19 +58,6 @@ struct RequestsView: View {
             
             switch selectedTab {
             case 0:
-                /*
-                HStack {
-                    Text("Pending Leave Requests")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundColor(Color("SecondaryTextColor"))
-                        .padding(.top, 20)
-                        .padding(.bottom, 10)
-                    Spacer()
-                }
-                .padding()
-                */
-                
                 ForEach(Array(pendingLeaveRequests.keys), id: \.self) { requestId in
                     if let leaveRequestData = pendingLeaveRequests[requestId] as? [String: Any],
                        let employeeName = leaveRequestData["employeeName"] as? String,
@@ -110,19 +97,6 @@ struct RequestsView: View {
                 }
                 
             case 1:
-                /*
-                HStack {
-                    Text("Leave Requests")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundColor(Color("SecondaryTextColor"))
-                        .padding(.top, 20)
-                        .padding(.bottom, 10)
-                    Spacer()
-                }
-                .padding()
-                */
-                
                 Menu {
                     ForEach(categories, id: \.self) { category in
                         Button(category) {
@@ -144,39 +118,38 @@ struct RequestsView: View {
                     )
                 }
                 .padding(.horizontal)
+                
+                if !selectedCategory.isEmpty {
+                    let filteredRequests = leaveRequests.filter {
+                        
+                        $0.requestType == selectedCategory && !$0.pending
+                    }
+                    
+                    if filteredRequests.isEmpty {
+                        Text("No leave requests found in this category.")
+                            .foregroundColor(.gray)
+                            .padding()
+                    } else {
+                        List {
+                            ForEach(filteredRequests, id: \.id) { leave in
+                                HStack {
+                                    Text(leave.employeeName)
+                                    Spacer()
+                                }
+                            }
+                            .padding()
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(Color(hex: "8BC5A3"))
+                            )
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 0))
+                        }
+                        .scrollContentBackground(.hidden)
+                    }
+                }
             default:
                 EmptyView()
-            }
-
-            // Display leave requests based on selected category
-            if !selectedCategory.isEmpty {
-                let filteredRequests = leaveRequests.filter {
-                    
-                    $0.requestType == selectedCategory && !$0.pending
-                }
-                
-                if filteredRequests.isEmpty {
-                    Text("No leave requests found in this category.")
-                        .foregroundColor(.gray)
-                        .padding()
-                } else {
-                    List {
-                        ForEach(filteredRequests, id: \.id) { leave in
-                            HStack {
-                                Text(leave.employeeName)
-                                Spacer()
-                            }
-                        }
-                        .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(Color(hex: "8BC5A3"))
-                        )
-                        .listRowSeparator(.hidden)
-                        .listRowInsets(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 0))
-                    }
-                    .scrollContentBackground(.hidden)
-                }
             }
         }
         .padding(.bottom, 30)
