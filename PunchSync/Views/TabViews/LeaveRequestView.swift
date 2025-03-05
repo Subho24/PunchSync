@@ -151,7 +151,7 @@ struct LeaveRequestView: View {
             }
             .overlay(alignment: .center) {
                 if showToast {
-                    ToastView(message: "New period created successfully!")
+                    ToastView(message: "Your leave request has been submitted!")
                         .transition(.move(edge: .bottom))
                         .animation(.spring(), value: showToast)
                 }
