@@ -64,51 +64,66 @@ struct EmployerView: View {
             }
             
             
-            VStack {
-                if isLoading {
-                    ProgressView("Loading employees..")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    if !pendingUsers.isEmpty {
-                        PendingUsersView(pendingUsers: pendingUsers, handleVerification: handleUserVerification)
-                    }
-                    List {
-                        ForEach(searchResults, id: \.id) { employee in
-                            if !employee.pending {
-                                NavigationLink(destination: EmployeeDetailView(employee: employee)) {
-                                    HStack() {
-                                        Image(systemName: "person.crop.circle.fill")
-                                        .foregroundColor(.white)
-                                        .frame(width: 30, height: 30)
-                                        
-                                        
-                                        Text(employee.fullName)
-                                            .foregroundColor(Color.white)
-                                        Spacer()
-                                        Text(employee.isAdmin ? "Admin" : "Employee")
-                                            .foregroundStyle(employee.isAdmin ? Color.red : Color.blue)
+            ScrollView {
+                            VStack {
+                                if isLoading {
+                                    ProgressView("Loading employees..")
+                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                } else {
+                                    if !pendingUsers.isEmpty {
+                                        PendingUsersView(pendingUsers: pendingUsers, handleVerification: handleUserVerification)
+                                    }
+                                    
+                                    if searchResults.contains(where: { !$0.pending }) {
+                                        Section(header: Text("Verified Employees")
+                                            .font(.headline)
+                                            .foregroundColor(.black)
+                                            .padding(.leading, 16)
+                                        ) {
+                                            List {
+                                                ForEach(searchResults, id: \.id) { employee in
+                                                    if !employee.pending {
+                                                        NavigationLink(destination: EmployeeDetailView(employee: employee)) {
+                                                            HStack {
+                                                                Image(systemName: "person.crop.circle.fill")
+                                                                    .foregroundColor(.white)
+                                                                    .frame(width: 30, height: 30)
+                                                                
+                                                                Text(employee.fullName)
+                                                                    .foregroundColor(Color.white)
+                                                                
+                                                                Spacer()
+                                                                
+                                                                Text(employee.isAdmin ? "Admin" : "Employee")
+                                                                    .foregroundStyle(employee.isAdmin ? Color.red : Color.blue)
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                .onDelete(perform: handleDelete)
+                                                .padding()
+                                                .background(
+                                                    RoundedRectangle(cornerRadius: 16)
+                                                        .fill(Color(hex: "8BC5A3"))
+                                                )
+                                                .listRowSeparator(.hidden)
+                                                .listRowInsets(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 0))
+                                            }
+                                            .scrollContentBackground(.hidden)
+                                            .frame(minHeight: 200)
+                                        }
+                                        .padding(.horizontal, 10)
                                     }
                                 }
                             }
+                            .onChange(of: searchField) {
+                                filterEmployees()
+                            }
+                            .padding(.bottom, 20)
                         }
-                        .onDelete(perform: handleDelete)
-                        .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(Color(hex: "8BC5A3"))
-                        )
-                        .listRowSeparator(.hidden)
-                        .listRowInsets(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 0))
                     }
-                    .scrollContentBackground(.hidden)
                 }
-            }
-            .onChange(of: searchField) {
-                filterEmployees()
-            }
-            .frame(maxHeight: .infinity)
-        }
-    }
+            
     
     private func loadAdminData() async {
         // Load admin data first

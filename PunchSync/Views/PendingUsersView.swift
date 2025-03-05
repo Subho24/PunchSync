@@ -18,31 +18,40 @@ struct PendingUsersView: View {
             ForEach(Array(pendingUsers.keys), id: \.self) { personalNumber in
                 if let userData = pendingUsers[personalNumber] as? [String: Any],
                    let fullName = userData["fullName"] as? String {
-                    VStack {
-                        Text(fullName)
-                            .padding(.bottom, 20)
+                    VStack(alignment: .leading, spacing: 12) {
+                                            Text("Name: \(fullName)")
+                                                .font(.headline)
+                                                .foregroundColor(.black)
                         HStack {
                             Button("Verify") {
                                 handleVerification(personalNumber, true)
                             }
-                            .padding(8)
-                            .padding(.horizontal, 15)
-                            .background(Color.green)
-                            .cornerRadius(10)
-                            .foregroundStyle(.white)
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color(hex: "8BC5A3"))
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                            .shadow(color: Color.green.opacity(0.5), radius: 4, x: 0, y: 2)
                             
                             Button("Deny") {
                                 handleVerification(personalNumber, false)
                             }
-                            .padding(8)
-                            .padding(.horizontal, 15)
-                            .background(Color.red)
-                            .cornerRadius(10)
-                            .foregroundStyle(.white)
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color(hex: "C96D59"))
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                            .shadow(color: Color.red.opacity(0.5), radius: 4, x: 0, y: 2)
                         }
                     }
-                    .padding(.horizontal, 25)
-                    .padding(.top, 20)
+                    .padding()
+                    .background(Color.white)
+                    .cornerRadius(16)
+                    .shadow(color: Color.gray.opacity(0.3), radius: 8, x: 0, y: 4)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 8)
                 }
             }
         }

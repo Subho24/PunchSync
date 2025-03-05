@@ -63,36 +63,48 @@ struct RequestsView: View {
                        let employeeName = leaveRequestData["employeeName"] as? String,
                        let title = leaveRequestData["title"] as? String,
                        let userId = leaveRequestData["userId"] as? String {
-                        VStack(alignment: .leading) {
+                        VStack(alignment: .leading, spacing: 12) {
                             Text("Employee: \(employeeName)")
-                                .font(.headline)
-                            Text("Title: \(title)")
-                                .padding(.bottom, 10)
+                             .font(.headline)
+                             .foregroundColor(.black)
+                                                                         
+                             Text("Title: \(title)")
+                             .font(.subheadline)
+                             .foregroundColor(.gray)
+                        
                             
-                            HStack {
+                            HStack(spacing: 12) {
                                 Button("Verify") {
                                     verifyLeaveRequest(requestId: requestId, approved: true)
                                     
                                 }
-                                .padding(8)
-                                .padding(.horizontal, 15)
-                                .background(Color.green)
-                                .cornerRadius(10)
-                                .foregroundStyle(.white)
+                                .font(.headline)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color(hex: "8BC5A3"))
+                                .foregroundColor(.white)
+                                .cornerRadius(12)
+                                .shadow(color: Color.green.opacity(0.5), radius: 4, x: 0, y: 2)
                                 
                                 Button("Deny") {
                                     verifyLeaveRequest(requestId: requestId, approved: false)
                                     
                                 }
-                                .padding(8)
-                                .padding(.horizontal, 15)
-                                .background(Color.red)
-                                .cornerRadius(10)
-                                .foregroundStyle(.white)
+                                .font(.headline)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color(hex: "C96D59"))
+                                .foregroundColor(.white)
+                                .cornerRadius(12)
+                                .shadow(color: Color.green.opacity(0.5), radius: 4, x: 0, y: 2)
                             }
                         }
-                        .padding(.horizontal, 25)
-                        .padding(.top, 20)
+                        .padding()
+                        .background(Color.white)
+                        .cornerRadius(16)
+                        .shadow(color: Color.gray.opacity(0.3), radius: 8, x: 0, y: 4)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 8)
                     }
                 }
                 
