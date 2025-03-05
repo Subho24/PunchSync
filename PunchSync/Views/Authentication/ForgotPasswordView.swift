@@ -15,7 +15,9 @@ struct ForgotPasswordView: View {
     @State var email = ""
     @State var errorMessage = ""
     @State var successMessage: String?
-     
+    
+    @State var deletingAccountReset: Bool
+    
     @Environment(\.presentationMode) var presentationMode
     
     var body: some View {
@@ -65,7 +67,7 @@ struct ForgotPasswordView: View {
                             errorMessage = firebaseError
                             successMessage = nil
                         } else {
-                            successMessage = "If the email you provided is registered, we've sent a reset link to your inbox."
+                            successMessage = deletingAccountReset ? "Please check your email. Once password is reset, return to delete your account." : "If the email you provided is registered, we've sent a reset link to your inbox."
                             email = ""
                             errorMessage = firebaseError ?? "" // Clear error on success
                         }
@@ -85,5 +87,5 @@ struct ForgotPasswordView: View {
 }
 
 #Preview {
-    ForgotPasswordView(isPresented: .constant(true))
+    ForgotPasswordView(isPresented: .constant(true), deletingAccountReset: false)
 }

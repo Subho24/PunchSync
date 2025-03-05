@@ -56,7 +56,7 @@ struct DeleteAccountView: View {
                 }
                 
                 if showForgotPassword {
-                    ForgotPasswordView(isPresented: $showForgotPassword)
+                    ForgotPasswordView(isPresented: $showForgotPassword, deletingAccountReset: true)
                         .navigationBarBackButtonHidden(true)
                         .frame(height: 350)
                         .padding(.horizontal, 24)

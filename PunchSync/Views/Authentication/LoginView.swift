@@ -81,7 +81,7 @@ struct LoginView: View {
                 }
             }
             if showForgotPassword {
-                ForgotPasswordView(isPresented: $showForgotPassword)
+                ForgotPasswordView(isPresented: $showForgotPassword, deletingAccountReset: false)
                     .cornerRadius(12)
                     .padding(.horizontal, 20)
             }
