@@ -23,107 +23,116 @@ struct EmployerView: View {
     @State private var pendingUsers: [String: Any] = [:]
     @State var approved: Bool = false
     
+    
     @State var errorMessage = ""
 
     
     var body: some View {
         NavigationStack {
-            HStack {
-                ProfileImage()
-                
-                VStack {
-                    Text("Admin: \(adminData.fullName)")
-                        .font(.headline)
+            VStack(spacing: 0) {
+              
+                HStack {
+                    ProfileImage()
+                    
+                    VStack {
+                        Text("Admin: \(adminData.fullName)")
+                            .font(.headline)
+                    }
+                    .padding()
+                    .task {
+                        await loadAllData()
+                    }
+                    
+                    Spacer()
                 }
                 .padding()
-                .task {
-                    await loadAllData()
-                }
+                .padding(.leading, 30)
+                .frame(maxWidth: .infinity)
+
+             
+                Text("My Employees")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.black)
+                    .padding(.top, 20)
+
                 
-                Spacer()
-            }
-            .padding()
-            .padding(.leading, 30)
-            .frame(maxWidth: .infinity)
-            
-            Text("My Employees")
-                .font(.title2) // Përdor fontin "title2" që është mesatar në madhësi
-                .fontWeight(.semibold) // Dërrmon titullin pak më shumë, por jo shumë të theksuar
-                .foregroundColor(.black) // Ngjyra e tekstit
-                .padding(.top, 20)
-            
-            VStack {
-                NavigationStack {
-                    TextFieldView(placeholder: "Search \(searchText)", text: $searchField, isSecure: false, systemName: "magnifyingglass")
-                }
-                .searchable(text: $searchText)
-            }
-            .padding(.top, 20)
-            .task {
-                await loadAllData()
-            }
-            
-            
-            ScrollView {
-                            VStack {
-                                if isLoading {
-                                    ProgressView("Loading employees..")
-                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                } else {
-                                    if !pendingUsers.isEmpty {
-                                        PendingUsersView(pendingUsers: pendingUsers, handleVerification: handleUserVerification)
-                                    }
-                                    
-                                    if searchResults.contains(where: { !$0.pending }) {
-                                        Section(header: Text("Verified Employees")
-                                            .font(.headline)
-                                            .foregroundColor(.black)
-                                            .padding(.leading, 16)
-                                        ) {
-                                            List {
-                                                ForEach(searchResults, id: \.id) { employee in
-                                                    if !employee.pending {
-                                                        NavigationLink(destination: EmployeeDetailView(employee: employee)) {
-                                                            HStack {
-                                                                Image(systemName: "person.crop.circle.fill")
-                                                                    .foregroundColor(.white)
-                                                                    .frame(width: 30, height: 30)
-                                                                
-                                                                Text(employee.fullName)
-                                                                    .foregroundColor(Color.white)
-                                                                
-                                                                Spacer()
-                                                                
-                                                                Text(employee.isAdmin ? "Admin" : "Employee")
-                                                                    .foregroundStyle(employee.isAdmin ? Color.red : Color.blue)
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                                .onDelete(perform: handleDelete)
-                                                .padding()
-                                                .background(
-                                                    RoundedRectangle(cornerRadius: 16)
-                                                        .fill(Color(hex: "8BC5A3"))
-                                                )
-                                                .listRowSeparator(.hidden)
-                                                .listRowInsets(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 0))
-                                            }
-                                            .scrollContentBackground(.hidden)
-                                            .frame(minHeight: 200)
-                                        }
-                                        .padding(.horizontal, 10)
-                                    }
-                                }
-                            }
-                            .onChange(of: searchField) {
+                VStack {
+                    NavigationStack {
+                        TextFieldView(placeholder: "Search \(searchText)", text: $searchField, isSecure: false, systemName: "magnifyingglass")
+                            .onChange(of: searchField) { _ in
                                 filterEmployees()
                             }
-                            .padding(.bottom, 20)
+                    }
+                    .searchable(text: $searchText)
+                }
+                .padding(.top, 20)
+
+                ScrollView {
+                    VStack(spacing: 10) {
+                        if isLoading {
+                            ProgressView("Loading employees..")
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        } else {
+                            if !pendingUsers.isEmpty {
+                                PendingUsersView(pendingUsers: pendingUsers, handleVerification: handleUserVerification)
+                            }
+
+                            if !searchResults.isEmpty {
+                                VStack(alignment: .leading, spacing: 5) {
+                                   
+                                    Text("Verified Employees")
+                                        .font(.headline) 
+                                        .foregroundColor(.black)
+                                        .frame(maxWidth: .infinity, alignment: .center)
+                                        .padding(.top, 10)
+                                    
+                                    
+                                    ForEach(searchResults.filter { !$0.pending }, id: \.id) { employee in
+                                        NavigationLink(destination: EmployeeDetailView(employee: employee)) {
+                                            HStack {
+                                                Image(systemName: "person.crop.circle.fill")
+                                                    .foregroundColor(.white)
+                                                    .frame(width: 30, height: 30)
+
+                                                Text(employee.fullName)
+                                                    .foregroundColor(.white)
+
+                                                Spacer()
+
+                                                Text(employee.isAdmin ? "Admin" : "Employee")
+                                                    .foregroundStyle(employee.isAdmin ? Color.red : Color.blue)
+                                            }
+                                            .padding()
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 16)
+                                                    .fill(Color(hex: "8BC5A3"))
+                                            )
+                                            .cornerRadius(10)
+                                        }
+                                    }
+                                    .onDelete(perform: handleDelete)
+                                }
+                                .padding(.horizontal)
+                            } else {
+                                Text("No employees found")
+                                    .foregroundColor(.gray)
+                                    .padding()
+                            }
                         }
                     }
+                    .padding(.top, 30)
+                    .padding(.bottom, 20)
                 }
-            
+                .ignoresSafeArea(.keyboard, edges: .bottom)
+
+
+            }
+        }
+    }
+
+    
+    
     
     private func loadAdminData() async {
         // Load admin data first
@@ -171,22 +180,22 @@ struct EmployerView: View {
     }
     
     private func handleUserVerification(userId: String, approved: Bool) {
-        punchsyncfb.verifyUser(userId: userId, approved: approved) { success, error in
-            if success {
-                DispatchQueue.main.async {
-                    pendingUsers.removeValue(forKey: userId)
-                    if approved {
-                        punchsyncfb.loadEmployees(for: adminData.companyCode) { loadedEmployees, error in
-                            if let loadedEmployees = loadedEmployees {
-                                self.employees = loadedEmployees
-                                self.searchResults = loadedEmployees
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+         punchsyncfb.verifyUser(userId: userId, approved: approved) { success, error in
+             if success {
+                 DispatchQueue.main.async {
+                     pendingUsers.removeValue(forKey: userId)
+                     if approved {
+                         punchsyncfb.loadEmployees(for: adminData.companyCode) { loadedEmployees, error in
+                             if let loadedEmployees = loadedEmployees {
+                                 self.employees = loadedEmployees
+                                 self.searchResults = loadedEmployees
+                             }
+                         }
+                     }
+                 }
+             }
+         }
+     }
 
     private func searchEmployees(by searchTerm: String) -> [EmployeeData] {
         return employees.filter { employee in

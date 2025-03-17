@@ -18,10 +18,9 @@ struct PendingUsersView: View {
             ForEach(Array(pendingUsers.keys), id: \.self) { personalNumber in
                 if let userData = pendingUsers[personalNumber] as? [String: Any],
                    let fullName = userData["fullName"] as? String {
-                    VStack(alignment: .leading, spacing: 12) {
-                                            Text("Name: \(fullName)")
-                                                .font(.headline)
-                                                .foregroundColor(.black)
+                    VStack {
+                        Text(fullName)
+                            .padding(.bottom, 20)
                         HStack {
                             Button("Verify") {
                                 handleVerification(personalNumber, true)
@@ -32,7 +31,7 @@ struct PendingUsersView: View {
                             .background(Color(hex: "8BC5A3"))
                             .foregroundColor(.white)
                             .cornerRadius(12)
-                            .shadow(color: Color.green.opacity(0.5), radius: 4, x: 0, y: 2)
+                            .shadow(color: Color.red.opacity(0.5), radius: 4, x: 0, y: 2)
                             
                             Button("Deny") {
                                 handleVerification(personalNumber, false)
@@ -69,4 +68,3 @@ struct PendingUsersView_Previews: PreviewProvider {
         )
     }
 }
-
