@@ -11,6 +11,8 @@ struct ProfileView: View {
     
     @State var punchsyncfb = PunchSyncFB()
     @StateObject private var employeeData = EmployeeData(id: "123", data: ["fullName": ""])
+    
+    @State var navigateToDeleteAccountView = false
 
     var body: some View {
         ZStack {
@@ -90,6 +92,20 @@ struct ProfileView: View {
                 .frame(maxWidth: .infinity) // Shtrirja përmbajtjes në të gjithë ekranin
                 
                 Spacer()
+                
+                Button(action: {
+                    navigateToDeleteAccountView = true
+                }) {
+                    Text("Delete Account")
+                        .foregroundColor(.white)
+                        .padding()
+                        .background(Color.red)
+                }
+                .navigationDestination(isPresented: $navigateToDeleteAccountView) {
+                    DeleteAccountView()
+                }
+                .cornerRadius(16)
+                .padding(.bottom, 50)
             }
         }
         .task {
